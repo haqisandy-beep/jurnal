@@ -301,28 +301,6 @@
                         <select id="guru" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
                             <option value="">Memuat data guru...</option>
                         </select>
-                        <!-- Debug info -->
-                        <div id="guruDebug" class="text-xs text-gray-500 mt-1 hidden"></div>
-                        
-                        <!-- Troubleshooting panel -->
-                        <div id="troubleshootingPanel" class="hidden mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div class="flex items-start space-x-2">
-                                <span class="text-yellow-600 text-sm">⚠️</span>
-                                <div class="text-xs text-yellow-700">
-                                    <p class="font-semibold mb-1">Data guru tidak dapat dimuat</p>
-                                    <p class="mb-2">Kemungkinan penyebab:</p>
-                                    <ul class="list-disc list-inside space-y-1 text-xs">
-                                        <li>URL Google Apps Script belum dikonfigurasi</li>
-                                        <li>Apps Script belum di-deploy sebagai Web App</li>
-                                        <li>Permission Apps Script belum diset ke "Anyone"</li>
-                                        <li>Koneksi internet bermasalah</li>
-                                    </ul>
-                                    <button id="retryLoadGuru" class="mt-2 px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded transition-colors">
-                                        🔄 Coba Lagi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -432,8 +410,8 @@
         // Production mode - menggunakan Google Apps Script
         const DEMO_MODE = false;
         
-        // Google Apps Script Web App URL - UPDATED dengan URL deployment yang benar
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfHvUqEExTw_fwWdQUnokDPPXd97HWo9w2eG4oCVZrSVLdWeSWNPwyFIBjxtxqf6OubA/exec';
+        // Google Apps Script Web App URL - GANTI DENGAN URL DEPLOY ANDA
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgZQqUvGVJsJJLL5bjh-GvSFC_7YH97pYH90oSsUTstA21mZ7UzlMnzy3iT7j--BxpAw/exec';
         
         // Spreadsheet configuration
         const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
@@ -453,685 +431,230 @@
             document.getElementById('tanggal').value = dateString;
         }
 
-        // Debug function
-        function updateDebugInfo(message) {
-            const debugDiv = document.getElementById('guruDebug');
-            debugDiv.textContent = message;
-            debugDiv.classList.remove('hidden');
-            console.log('🔍 Debug:', message);
-        }
-
-        // Load data guru - SIMPLIFIED: langsung dari HTML
-        async function loadGuru() {
-            console.log('📋 Loading guru data from HTML...');
-            updateDebugInfo('Memuat data guru dari HTML...');
-            
-            // Langsung load dari HTML tanpa perlu koneksi ke server
-            loadGuruFromHTML();
-        }
-
-        // Method 1: GET request dengan parameter spreadsheet yang tepat
-        async function tryGetMethod() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-            
-            try {
-                console.log('🔄 Trying GET method to:', SCRIPT_URL);
-                
-                // Coba berbagai format parameter
-                const urls = [
-                    `${SCRIPT_URL}?action=getGuru&spreadsheetId=${SPREADSHEET_ID}&sheetName=${GURU_SHEET_NAME}&timestamp=${Date.now()}`,
-                    `${SCRIPT_URL}?action=getGuru&timestamp=${Date.now()}`,
-                    `${SCRIPT_URL}?getGuru=true&spreadsheetId=${SPREADSHEET_ID}&sheet=${GURU_SHEET_NAME}`,
-                    `${SCRIPT_URL}?method=getGuru&id=${SPREADSHEET_ID}&sheet=${GURU_SHEET_NAME}`
-                ];
-                
-                for (const url of urls) {
-                    try {
-                        console.log('📡 Trying GET URL:', url);
-                        
-                        const response = await fetch(url, {
-                            method: 'GET',
-                            signal: controller.signal,
-                            headers: {
-                                'Accept': 'application/json, text/plain, */*',
-                                'Cache-Control': 'no-cache',
-                                'Pragma': 'no-cache'
-                            }
-                        });
-                        
-                        console.log('📡 GET Response status:', response.status);
-                        
-                        if (response.ok) {
-                            const text = await response.text();
-                            console.log('📋 GET Raw response (first 500 chars):', text.substring(0, 500));
-                            
-                            // Try parsing as JSON first
-                            try {
-                                const data = JSON.parse(text);
-                                console.log('📊 GET Parsed JSON data:', data);
-                                
-                                // Handle different response formats
-                                if (data && data.success && Array.isArray(data.data)) {
-                                    populateGuruDropdown(data.data);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                } else if (data && Array.isArray(data.guru)) {
-                                    populateGuruDropdown(data.guru);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                } else if (Array.isArray(data)) {
-                                    populateGuruDropdown(data);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                }
-                            } catch (parseError) {
-                                console.log('⚠️ GET JSON parse failed, trying text extraction');
-                                
-                                // Try to extract array from HTML or text response
-                                const patterns = [
-                                    /\["[^"]+(?:","[^"]+)*"\]/g,  // ["name1","name2","name3"]
-                                    /\[[^\]]*\]/g,                // Any array-like structure
-                                    /"([^"]+)"/g                  // Extract quoted strings
-                                ];
-                                
-                                for (const pattern of patterns) {
-                                    const matches = text.match(pattern);
-                                    if (matches) {
-                                        try {
-                                            const arrayStr = matches[0];
-                                            const guruArray = JSON.parse(arrayStr);
-                                            if (Array.isArray(guruArray) && guruArray.length > 0) {
-                                                console.log('✅ Extracted array from text:', guruArray);
-                                                populateGuruDropdown(guruArray);
-                                                clearTimeout(timeoutId);
-                                                return true;
-                                            }
-                                        } catch (e) {
-                                            continue;
-                                        }
-                                    }
-                                }
-                                
-                                // Last resort: extract names from any text
-                                const nameMatches = text.match(/"([^"]+)"/g);
-                                if (nameMatches && nameMatches.length > 0) {
-                                    const names = nameMatches.map(match => match.replace(/"/g, ''));
-                                    if (names.length > 0) {
-                                        console.log('✅ Extracted names from text:', names);
-                                        populateGuruDropdown(names);
-                                        clearTimeout(timeoutId);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
-                    } catch (urlError) {
-                        console.log(`❌ URL ${url} failed:`, urlError.message);
-                        continue;
-                    }
-                }
-                
-                throw new Error('All GET URL variations failed');
-            } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    throw new Error('GET request timeout (15s)');
-                }
-                throw error;
-            }
-        }
-
-        // Method 2: POST request dengan berbagai format payload
-        async function tryPostMethod() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-            
-            try {
-                console.log('🔄 Trying POST method to:', SCRIPT_URL);
-                
-                // Coba berbagai format payload
-                const payloads = [
-                    {
-                        action: 'getGuru',
-                        spreadsheetId: SPREADSHEET_ID,
-                        sheetName: GURU_SHEET_NAME
-                    },
-                    {
-                        method: 'getGuru',
-                        spreadsheetId: SPREADSHEET_ID,
-                        sheet: GURU_SHEET_NAME
-                    },
-                    {
-                        action: 'getGuru'
-                    },
-                    {
-                        getGuru: true,
-                        spreadsheetId: SPREADSHEET_ID,
-                        sheetName: GURU_SHEET_NAME
-                    }
-                ];
-                
-                for (const payload of payloads) {
-                    try {
-                        console.log('📡 Trying POST payload:', payload);
-                        
-                        const response = await fetch(SCRIPT_URL, {
-                            method: 'POST',
-                            signal: controller.signal,
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(payload)
-                        });
-                        
-                        console.log('📡 POST Response status:', response.status);
-                        
-                        if (response.ok) {
-                            const text = await response.text();
-                            console.log('📋 POST Raw response:', text.substring(0, 300) + '...');
-                            
-                            try {
-                                const data = JSON.parse(text);
-                                console.log('📊 POST Parsed data:', data);
-                                
-                                if (data && data.success && data.data && Array.isArray(data.data)) {
-                                    populateGuruDropdown(data.data);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                } else if (data && Array.isArray(data.guru)) {
-                                    populateGuruDropdown(data.guru);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                } else if (Array.isArray(data)) {
-                                    populateGuruDropdown(data);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                }
-                            } catch (parseError) {
-                                console.log('⚠️ POST JSON parse failed, trying text parsing');
-                                // Try to extract array from text response
-                                const arrayMatch = text.match(/\[.*?\]/);
-                                if (arrayMatch) {
-                                    try {
-                                        const guruArray = JSON.parse(arrayMatch[0]);
-                                        if (Array.isArray(guruArray) && guruArray.length > 0) {
-                                            populateGuruDropdown(guruArray);
-                                            clearTimeout(timeoutId);
-                                            return true;
-                                        }
-                                    } catch (e) {
-                                        console.log('Array extraction failed');
-                                    }
-                                }
-                            }
-                        }
-                    } catch (payloadError) {
-                        console.log(`❌ Payload ${JSON.stringify(payload)} failed:`, payloadError.message);
-                        continue;
-                    }
-                }
-                
-                throw new Error('All POST payload variations failed');
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 3: CORS method dengan headers yang tepat
-        async function tryCorsMethod() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
-            
-            try {
-                console.log('🔄 Trying CORS method to:', SCRIPT_URL);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    mode: 'cors',
-                    credentials: 'omit',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json, text/plain, */*'
-                    },
-                    body: 'action=getGuru'
-                });
-                
-                clearTimeout(timeoutId);
-                console.log('📡 CORS Response status:', response.status);
-                
-                if (response.ok) {
-                    const text = await response.text();
-                    console.log('📋 CORS Raw response (first 300 chars):', text.substring(0, 300));
-                    
-                    // Parse response
-                    try {
-                        const data = JSON.parse(text);
-                        console.log('📊 CORS Parsed data:', data);
-                        
-                        if (data && data.success && Array.isArray(data.data)) {
-                            populateGuruDropdown(data.data);
-                            return true;
-                        } else if (Array.isArray(data)) {
-                            populateGuruDropdown(data);
-                            return true;
-                        }
-                    } catch (parseError) {
-                        // Try extracting from text
-                        const arrayMatch = text.match(/\[.*?\]/);
-                        if (arrayMatch) {
-                            try {
-                                const guruArray = JSON.parse(arrayMatch[0]);
-                                if (Array.isArray(guruArray)) {
-                                    populateGuruDropdown(guruArray);
-                                    return true;
-                                }
-                            } catch (e) {
-                                console.log('Array extraction failed');
-                            }
-                        }
-                    }
-                }
-                throw new Error(`CORS HTTP ${response.status}: ${response.statusText}`);
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 4: Direct spreadsheet access dengan berbagai URL format
-        async function tryDirectSpreadsheetAccess() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 12000);
-            
-            try {
-                console.log('🔄 Trying direct spreadsheet access');
-                
-                // Berbagai format URL untuk akses langsung ke spreadsheet
-                const directUrls = [
-                    // Format CSV export
-                    `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${GURU_SHEET_NAME}`,
-                    // Format JSON export
-                    `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${GURU_SHEET_NAME}`,
-                    // Format HTML export
-                    `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:html&sheet=${GURU_SHEET_NAME}`,
-                    // Public CSV export
-                    `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0`,
-                ];
-                
-                for (const url of directUrls) {
-                    try {
-                        console.log('📡 Trying direct URL:', url);
-                        
-                        const response = await fetch(url, {
-                            method: 'GET',
-                            signal: controller.signal,
-                            headers: {
-                                'Accept': 'text/csv, application/json, text/html, */*',
-                                'Cache-Control': 'no-cache'
-                            }
-                        });
-                        
-                        console.log('📡 Direct Response status:', response.status);
-                        
-                        if (response.ok) {
-                            const text = await response.text();
-                            console.log('📋 Direct Raw response (first 300 chars):', text.substring(0, 300));
-                            
-                            // Parse CSV format
-                            if (url.includes('csv')) {
-                                const lines = text.split('\n').filter(line => line.trim());
-                                if (lines.length > 1) { // Skip header
-                                    const guruNames = lines.slice(1).map(line => {
-                                        // Ambil kolom pertama (nama guru)
-                                        const columns = line.split(',');
-                                        return columns[0].replace(/"/g, '').trim();
-                                    }).filter(name => name && name !== '');
-                                    
-                                    if (guruNames.length > 0) {
-                                        console.log('✅ Extracted guru from CSV:', guruNames);
-                                        populateGuruDropdown(guruNames);
-                                        clearTimeout(timeoutId);
-                                        return true;
-                                    }
-                                }
-                            }
-                            
-                            // Parse JSON format
-                            if (url.includes('json')) {
-                                try {
-                                    // Google Sheets JSON format biasanya wrapped
-                                    const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
-                                    if (jsonMatch) {
-                                        const data = JSON.parse(jsonMatch[1]);
-                                        if (data.table && data.table.rows) {
-                                            const guruNames = data.table.rows.map(row => {
-                                                return row.c && row.c[0] && row.c[0].v ? row.c[0].v : null;
-                                            }).filter(name => name && name.trim());
-                                            
-                                            if (guruNames.length > 0) {
-                                                console.log('✅ Extracted guru from JSON:', guruNames);
-                                                populateGuruDropdown(guruNames);
-                                                clearTimeout(timeoutId);
-                                                return true;
-                                            }
-                                        }
-                                    }
-                                } catch (jsonError) {
-                                    console.log('JSON parsing failed:', jsonError);
-                                }
-                            }
-                            
-                            // Parse HTML format
-                            if (url.includes('html')) {
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(text, 'text/html');
-                                const cells = doc.querySelectorAll('td');
-                                const guruNames = Array.from(cells).map(cell => cell.textContent.trim()).filter(name => name && name !== 'Nama Guru');
-                                
-                                if (guruNames.length > 0) {
-                                    console.log('✅ Extracted guru from HTML:', guruNames);
-                                    populateGuruDropdown(guruNames);
-                                    clearTimeout(timeoutId);
-                                    return true;
-                                }
-                            }
-                        }
-                    } catch (urlError) {
-                        console.log(`❌ Direct URL ${url} failed:`, urlError.message);
-                        continue;
-                    }
-                }
-                
-                throw new Error('All direct spreadsheet access methods failed');
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 5: Direct fetch dengan parameter yang tepat
-        async function tryDirectFetch() {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
-            try {
-                console.log('🔄 Trying direct fetch to:', SCRIPT_URL);
-                
-                const response = await fetch(`${SCRIPT_URL}?action=getGuru&t=${Date.now()}`, {
-                    method: 'GET',
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'application/json, text/plain, */*',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                clearTimeout(timeoutId);
-                console.log('📡 Response status:', response.status);
-                
-                if (response.ok) {
-                    const text = await response.text();
-                    console.log('📋 Raw response:', text.substring(0, 200) + '...');
-                    
-                    try {
-                        const data = JSON.parse(text);
-                        console.log('📊 Parsed data:', data);
-                        
-                        if (data && data.success && data.data && Array.isArray(data.data)) {
-                            populateGuruDropdown(data.data);
-                            return true;
-                        }
-                    } catch (parseError) {
-                        console.log('⚠️ JSON parse failed, trying as plain text');
-                        // Jika response bukan JSON, coba parse sebagai array sederhana
-                        if (text.includes('[') && text.includes(']')) {
-                            const arrayMatch = text.match(/\[.*\]/);
-                            if (arrayMatch) {
-                                try {
-                                    const guruArray = JSON.parse(arrayMatch[0]);
-                                    if (Array.isArray(guruArray)) {
-                                        populateGuruDropdown(guruArray);
-                                        return true;
-                                    }
-                                } catch (e) {
-                                    console.log('Array extraction failed');
-                                }
-                            }
-                        }
-                    }
-                }
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 3: JSONP
-        function tryJSONPMethod() {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'guruCallback_' + Date.now();
-                const timeout = setTimeout(() => {
-                    cleanup();
-                    reject(new Error('JSONP timeout (10s)'));
-                }, 10000);
-                
-                function cleanup() {
-                    clearTimeout(timeout);
-                    delete window[callbackName];
-                    const script = document.getElementById(callbackName);
-                    if (script) script.remove();
-                }
-                
-                window[callbackName] = function(response) {
-                    cleanup();
-                    try {
-                        console.log('JSONP Response:', response);
-                        if (response && response.success && response.data && Array.isArray(response.data)) {
-                            populateGuruDropdown(response.data);
-                            resolve(true);
-                        } else if (Array.isArray(response)) {
-                            populateGuruDropdown(response);
-                            resolve(true);
-                        } else {
-                            reject(new Error('Invalid JSONP response format'));
-                        }
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                
-                const script = document.createElement('script');
-                script.id = callbackName;
-                script.src = `${SCRIPT_URL}?action=getGuru&callback=${callbackName}&t=${Date.now()}`;
-                script.onerror = () => {
-                    cleanup();
-                    reject(new Error('JSONP script load failed'));
-                };
-                
-                document.head.appendChild(script);
-            });
-        }
-
-        // Method 4: No-cors mode (untuk bypass CORS issues)
-        async function tryNoCorsMethod() {
-            try {
-                console.log('🔄 Trying no-cors mode');
-                
-                // Dengan no-cors, kita tidak bisa membaca response, tapi bisa trigger request
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getGuru'
-                    })
-                });
-                
-                // Karena no-cors tidak bisa baca response, kita fallback ke data default
-                console.log('📡 No-cors request sent, using fallback data');
-                return false; // Always return false to trigger fallback
-                
-            } catch (error) {
-                throw error;
-            }
-        }
-
-        // Populate dropdown
-        function populateGuruDropdown(guruData) {
+        // Load guru langsung dari HTML
+        function loadGuru() {
             const guruSelect = document.getElementById('guru');
+            
+            const daftarGuru = [
+                'Dra. Hj. Siti Aminah, M.Pd',
+                'Drs. H. Ahmad Fauzi, M.Pd', 
+                'Ir. Bambang Sutrisno, M.T',
+                'Dra. Ratna Dewi Sari, M.Pd',
+                'S.Pd. Andi Wijaya',
+                'S.Kom. Budi Hartono, M.Kom',
+                'Dra. Lina Marlina',
+                'S.Pd. Hendra Gunawan',
+                'S.Pd. Maya Kartika, M.Pd',
+                'S.Kom. Rudi Hermawan',
+                'Dra. Indah Permatasari',
+                'S.Pd. Yudi Prasetyo',
+                'S.Pd. Dewi Wulandari, M.Pd',
+                'S.Kom. Agus Setiawan, M.T',
+                'Dra. Rina Sari Dewi',
+                'S.Pd. Hadi Susanto, M.Pd',
+                'S.Kom. Fitri Handayani',
+                'S.Pd. Doni Kurniawan',
+                'Dra. Sri Wahyuni, M.Pd',
+                'S.Pd. Eko Prasetyo, M.T'
+            ];
+            
             guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
-            
-            // Filter dan clean data
-            const cleanGuruData = guruData
-                .filter(nama => nama && typeof nama === 'string' && nama.trim())
-                .map(nama => nama.trim())
-                .filter((nama, index, arr) => arr.indexOf(nama) === index); // Remove duplicates
-            
-            cleanGuruData.forEach(nama => {
+            daftarGuru.forEach(nama => {
                 const option = document.createElement('option');
                 option.value = nama;
                 option.textContent = nama;
                 guruSelect.appendChild(option);
             });
             
-            console.log('✅ Dropdown populated with', cleanGuruData.length, 'guru');
-        }
-
-        // Load guru langsung dari HTML - UPDATED dengan nama guru sekolah
-        function loadGuruFromHTML() {
-            const guruSelect = document.getElementById('guru');
-            
-            // ========================================
-            // DAFTAR NAMA GURU - EDIT DI SINI
-            // ========================================
-            // Silakan tambah, edit, atau hapus nama guru sesuai kebutuhan sekolah
-            // Format: 'Nama Lengkap Guru dengan Gelar'
-            
-            const daftarGuru = [
-                // Baris 1-5
-                'Dra. Hj. Siti Aminah, M.Pd',
-                'Drs. H. Ahmad Fauzi, M.Pd', 
-                'Ir. Bambang Sutrisno, M.T',
-                'Dra. Ratna Dewi Sari, M.Pd',
-                'S.Pd. Andi Wijaya',
-                
-                // Baris 6-10
-                'S.Kom. Budi Hartono, M.Kom',
-                'Dra. Lina Marlina',
-                'S.Pd. Hendra Gunawan',
-                'S.Pd. Maya Kartika, M.Pd',
-                'S.Kom. Rudi Hermawan',
-                
-                // Baris 11-15
-                'Dra. Indah Permatasari',
-                'S.Pd. Yudi Prasetyo',
-                'S.Pd. Dewi Wulandari, M.Pd',
-                'S.Kom. Agus Setiawan, M.T',
-                'Dra. Rina Sari Dewi',
-                
-                // Baris 16-20
-                'S.Pd. Hadi Susanto, M.Pd',
-                'S.Kom. Fitri Handayani',
-                'S.Pd. Doni Kurniawan',
-                'Dra. Sri Wahyuni, M.Pd',
-                'S.Pd. Eko Prasetyo, M.T',
-                
-                // TAMBAH GURU BARU DI BAWAH INI
-                // ========================================
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                // ========================================
-                // AKHIR DAFTAR GURU
-                // ========================================
-            ];
-            
-            populateGuruDropdown(daftarGuru);
-            
             console.log('✅ Data guru berhasil dimuat dari HTML');
-            updateDebugInfo('Data guru berhasil dimuat - ' + daftarGuru.length + ' guru tersedia');
+        }
+
+        // Upload foto ke Google Drive dengan multiple fallback methods
+        async function uploadPhotoToDrive(photoData, fileName) {
+            console.log('📤 Starting photo upload process...');
+            console.log('📊 File info:', { name: fileName, size: Math.round(photoData.length / 1024) + 'KB' });
             
-            // Hide troubleshooting panel karena sudah berhasil
-            const troubleshootingPanel = document.getElementById('troubleshootingPanel');
-            if (troubleshootingPanel) {
-                troubleshootingPanel.classList.add('hidden');
+            // Method 1: FormData Upload
+            try {
+                console.log('🚀 Method 1: Trying FormData upload...');
+                return await uploadViaFormData(photoData, fileName);
+            } catch (error) {
+                console.log('❌ Method 1 failed:', error.message);
+            }
+            
+            // Method 2: JSON Upload
+            try {
+                console.log('🚀 Method 2: Trying JSON upload...');
+                return await uploadViaJSON(photoData, fileName);
+            } catch (error) {
+                console.log('❌ Method 2 failed:', error.message);
+            }
+            
+            // Method 3: Base64 Upload
+            try {
+                console.log('🚀 Method 3: Trying Base64 upload...');
+                return await uploadViaBase64(photoData, fileName);
+            } catch (error) {
+                console.log('❌ Method 3 failed:', error.message);
+            }
+            
+            // All methods failed
+            throw new Error('Semua metode upload gagal. Periksa koneksi internet dan Apps Script.');
+        }
+
+        // Method 1: FormData Upload
+        async function uploadViaFormData(photoData, fileName) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            
+            try {
+                // Convert base64 to blob
+                const base64Data = photoData.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/jpeg' });
+                
+                // Create FormData
+                const formData = new FormData();
+                formData.append('action', 'uploadPhoto');
+                formData.append('fileName', fileName);
+                formData.append('photoFile', blob, fileName);
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                return await processUploadResponse(response, 'FormData');
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
             }
         }
 
-        // Fungsi retry untuk load guru
-        function retryLoadGuru() {
-            const retryBtn = document.getElementById('retryLoadGuru');
-            const troubleshootingPanel = document.getElementById('troubleshootingPanel');
+        // Method 2: JSON Upload
+        async function uploadViaJSON(photoData, fileName) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
             
-            if (retryBtn) {
-                retryBtn.innerHTML = '<div class="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin inline-block mr-1"></div>Mencoba...';
-                retryBtn.disabled = true;
+            try {
+                const payload = {
+                    action: 'uploadPhoto',
+                    fileName: fileName,
+                    photoData: photoData
+                };
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                clearTimeout(timeoutId);
+                return await processUploadResponse(response, 'JSON');
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        }
+
+        // Method 3: Base64 Upload
+        async function uploadViaBase64(photoData, fileName) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            
+            try {
+                const payload = {
+                    action: 'uploadPhotoBase64',
+                    fileName: fileName,
+                    photoData: photoData
+                };
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                clearTimeout(timeoutId);
+                return await processUploadResponse(response, 'Base64');
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        }
+
+        // Process upload response
+        async function processUploadResponse(response, method) {
+            console.log(`📡 ${method} Response status:`, response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
-            // Hide troubleshooting panel
-            if (troubleshootingPanel) {
-                troubleshootingPanel.classList.add('hidden');
-            }
+            const responseText = await response.text();
+            console.log(`📋 ${method} Raw response:`, responseText.substring(0, 200) + '...');
             
-            // Reset guru dropdown
-            const guruSelect = document.getElementById('guru');
-            guruSelect.innerHTML = '<option value="">Memuat ulang data guru...</option>';
-            
-            updateDebugInfo('🔄 Mencoba memuat ulang data guru...');
-            
-            // Test connection dan load guru lagi
-            testConnection().then((connectionOk) => {
-                if (connectionOk) {
-                    console.log('🚀 Retry: Koneksi OK, loading data guru...');
-                    loadGuru();
+            try {
+                const result = JSON.parse(responseText);
+                console.log(`📊 ${method} Parsed response:`, result);
+                
+                if (result.success && result.fileUrl) {
+                    console.log(`✅ ${method} upload successful:`, result.fileUrl);
+                    return result.fileUrl;
+                } else if (result.fileId) {
+                    const viewLink = `https://drive.google.com/file/d/${result.fileId}/view?usp=sharing`;
+                    console.log(`✅ ${method} upload successful (generated link):`, viewLink);
+                    return viewLink;
                 } else {
-                    console.log('⚠️ Retry: Koneksi masih bermasalah');
-                    loadFallbackGuru();
+                    throw new Error(result.error || `${method} upload failed - invalid response`);
                 }
-            }).catch(error => {
-                console.error('❌ Retry connection test error:', error);
-                loadFallbackGuru();
-            }).finally(() => {
-                // Reset retry button
-                if (retryBtn) {
-                    retryBtn.innerHTML = '🔄 Coba Lagi';
-                    retryBtn.disabled = false;
+            } catch (parseError) {
+                console.log(`⚠️ ${method} JSON parse failed, trying text extraction...`);
+                
+                // Extract link patterns
+                const linkPatterns = [
+                    /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/,
+                    /"fileUrl":\s*"([^"]+)"/,
+                    /"link":\s*"([^"]+)"/
+                ];
+                
+                for (const pattern of linkPatterns) {
+                    const match = responseText.match(pattern);
+                    if (match) {
+                        const extractedLink = match[1] || match[0];
+                        console.log(`🔗 ${method} link extracted:`, extractedLink);
+                        return extractedLink.replace(/["']/g, '');
+                    }
                 }
-            });
+                
+                // Extract fileId
+                const fileIdMatch = responseText.match(/[a-zA-Z0-9_-]{25,}/);
+                if (fileIdMatch) {
+                    const fileId = fileIdMatch[0];
+                    const generatedLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+                    console.log(`🔗 ${method} generated link from fileId:`, generatedLink);
+                    return generatedLink;
+                }
+                
+                throw new Error(`${method} - Cannot extract link from response`);
+            }
         }
 
         // Kirim data ke Google Sheets
@@ -1161,132 +684,6 @@
                     reject({ success: false, error: 'Gagal mengirim data ke Google Sheets: ' + error.message });
                 });
             });
-        }
-
-        // Upload foto ke Google Drive dengan FormData - ENHANCED untuk link yang bisa dibuka
-        async function uploadPhotoToDrive(photoData, fileName) {
-            try {
-                console.log('📤 Mengupload foto ke Google Drive dengan FormData...');
-                console.log('📊 File info:', { name: fileName, size: Math.round(photoData.length / 1024) + 'KB' });
-                
-                // Buat FormData untuk upload
-                const formData = new FormData();
-                
-                // Convert base64 to blob dengan kualitas yang baik
-                const base64Data = photoData.split(',')[1];
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/jpeg' });
-                
-                console.log('📦 Blob created:', { size: blob.size, type: blob.type });
-                
-                // Append data ke FormData dengan parameter yang tepat untuk Google Drive
-                formData.append('action', 'uploadPhoto');
-                formData.append('fileName', fileName);
-                formData.append('photoFile', blob, fileName);
-                formData.append('makePublic', 'true'); // Pastikan file bisa diakses publik
-                formData.append('returnViewLink', 'true'); // Minta link yang bisa dibuka langsung
-                
-                // Upload dengan timeout yang lebih lama untuk file besar
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => {
-                    controller.abort();
-                    console.log('⏰ Upload timeout setelah 45 detik');
-                }, 45000); // 45 detik untuk file besar
-                
-                console.log('🚀 Mengirim request ke:', SCRIPT_URL);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                console.log('📡 Response status:', response.status);
-                console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
-                
-                if (response.ok) {
-                    const responseText = await response.text();
-                    console.log('📋 Raw response:', responseText);
-                    
-                    try {
-                        const result = JSON.parse(responseText);
-                        console.log('📊 Parsed response data:', result);
-                        
-                        if (result.success && result.fileUrl) {
-                            console.log('✅ Foto berhasil diupload ke Google Drive:', result.fileUrl);
-                            
-                            // Validasi bahwa link bisa dibuka
-                            if (result.fileUrl.includes('drive.google.com') || result.fileUrl.includes('docs.google.com')) {
-                                console.log('🔗 Link Google Drive valid:', result.fileUrl);
-                                return result.fileUrl;
-                            } else {
-                                console.log('⚠️ Link tidak standar, tapi tetap valid:', result.fileUrl);
-                                return result.fileUrl;
-                            }
-                        } else if (result.fileId) {
-                            // Jika hanya dapat fileId, buat link view sendiri
-                            const viewLink = `https://drive.google.com/file/d/${result.fileId}/view?usp=sharing`;
-                            console.log('🔗 Generated view link from fileId:', viewLink);
-                            return viewLink;
-                        } else {
-                            throw new Error(result.error || 'Upload gagal - response tidak valid');
-                        }
-                    } catch (parseError) {
-                        console.log('⚠️ Response bukan JSON, mencoba extract link...');
-                        
-                        // Coba extract link dari response text
-                        const linkPatterns = [
-                            /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/g,
-                            /https:\/\/docs\.google\.com\/[^"'\s]+/g,
-                            /https:\/\/drive\.google\.com\/[^"'\s]+/g,
-                            /"fileUrl":\s*"([^"]+)"/g,
-                            /"link":\s*"([^"]+)"/g
-                        ];
-                        
-                        for (const pattern of linkPatterns) {
-                            const matches = responseText.match(pattern);
-                            if (matches && matches.length > 0) {
-                                const extractedLink = matches[0].replace(/["']/g, '');
-                                console.log('🔗 Link extracted from response:', extractedLink);
-                                return extractedLink;
-                            }
-                        }
-                        
-                        // Jika tidak ada link, tapi ada fileId
-                        const fileIdMatch = responseText.match(/[a-zA-Z0-9_-]{25,}/);
-                        if (fileIdMatch) {
-                            const fileId = fileIdMatch[0];
-                            const generatedLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-                            console.log('🔗 Generated link from extracted fileId:', generatedLink);
-                            return generatedLink;
-                        }
-                        
-                        throw new Error('Tidak dapat mengextract link dari response');
-                    }
-                } else {
-                    const errorText = await response.text();
-                    console.error('❌ HTTP Error Response:', errorText);
-                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-                }
-                
-            } catch (error) {
-                console.error('❌ Upload error:', error);
-                
-                if (error.name === 'AbortError') {
-                    throw new Error('Upload timeout - file terlalu besar atau koneksi lambat');
-                } else if (error.message.includes('Failed to fetch')) {
-                    throw new Error('Koneksi gagal - periksa internet atau URL Apps Script');
-                } else {
-                    throw error;
-                }
-            }
         }
 
         // Hitung jumlah jam pelajaran
@@ -1476,146 +873,40 @@
         function validateForm() {
             const errors = [];
             
-            // Validasi jam pelajaran
             const dariJam = document.getElementById('dariJam').value;
             const sampaiJam = document.getElementById('sampaiJam').value;
             
-            if (!dariJam) {
-                errors.push('Dari Jam harus dipilih');
-                highlightError('dariJam');
-            }
-            
-            if (!sampaiJam) {
-                errors.push('Sampai Jam harus dipilih');
-                highlightError('sampaiJam');
-            }
-            
+            if (!dariJam) errors.push('Dari Jam harus dipilih');
+            if (!sampaiJam) errors.push('Sampai Jam harus dipilih');
             if (dariJam && sampaiJam && parseInt(sampaiJam) < parseInt(dariJam)) {
                 errors.push('Sampai Jam tidak boleh lebih kecil dari Dari Jam');
-                highlightError('sampaiJam');
             }
             
-            // Validasi kelas
             const kelas = document.getElementById('kelas').value;
-            if (!kelas) {
-                errors.push('Kelas harus dipilih');
-                highlightError('kelas');
-            }
+            if (!kelas) errors.push('Kelas harus dipilih');
             
-            // Validasi guru
             const guru = document.getElementById('guru').value;
-            if (!guru || guru === 'Memuat data guru...') {
-                errors.push('Guru harus dipilih');
-                highlightError('guru');
-            }
+            if (!guru || guru === 'Memuat data guru...') errors.push('Guru harus dipilih');
             
-            // Validasi mata pelajaran
             const mataPelajaran = document.getElementById('mataPelajaran').value.trim();
-            if (!mataPelajaran) {
-                errors.push('Mata Pelajaran harus diisi');
-                highlightError('mataPelajaran');
-            }
+            if (!mataPelajaran) errors.push('Mata Pelajaran harus diisi');
             
-            // Validasi materi
             const materi = document.getElementById('materi').value.trim();
-            if (!materi) {
-                errors.push('Materi Pembelajaran harus diisi');
-                highlightError('materi');
-            }
+            if (!materi) errors.push('Materi Pembelajaran harus diisi');
             
-            // Validasi foto kegiatan (WAJIB)
             const photoData = document.getElementById('photoData').value;
-            if (!capturedPhotoData && !photoData) {
-                errors.push('Foto kegiatan wajib diambil');
-                highlightPhotoError();
-            }
+            if (!capturedPhotoData && !photoData) errors.push('Foto kegiatan wajib diambil');
             
             return errors;
-        }
-        
-        // Highlight field yang error
-        function highlightError(fieldId) {
-            const field = document.getElementById(fieldId);
-            field.classList.add('border-red-500', 'bg-red-50');
-            field.classList.remove('border-gray-200');
-            
-            // Remove highlight setelah user mulai mengetik/memilih
-            const removeHighlight = () => {
-                field.classList.remove('border-red-500', 'bg-red-50');
-                field.classList.add('border-gray-200');
-                field.removeEventListener('input', removeHighlight);
-                field.removeEventListener('change', removeHighlight);
-            };
-            
-            field.addEventListener('input', removeHighlight);
-            field.addEventListener('change', removeHighlight);
-        }
-        
-        // Highlight foto section yang error
-        function highlightPhotoError() {
-            const photoSection = document.querySelector('.border-dashed');
-            photoSection.classList.add('border-red-500', 'bg-red-50');
-            photoSection.classList.remove('border-gray-300');
-            
-            // Remove highlight setelah foto diambil
-            const removePhotoHighlight = () => {
-                photoSection.classList.remove('border-red-500', 'bg-red-50');
-                photoSection.classList.add('border-gray-300');
-            };
-            
-            // Auto remove highlight saat foto berhasil diambil
-            const checkPhotoTaken = () => {
-                if (capturedPhotoData || document.getElementById('photoData').value) {
-                    removePhotoHighlight();
-                }
-            };
-            
-            // Check setiap 500ms apakah foto sudah diambil
-            const photoCheckInterval = setInterval(() => {
-                if (capturedPhotoData || document.getElementById('photoData').value) {
-                    removePhotoHighlight();
-                    clearInterval(photoCheckInterval);
-                }
-            }, 500);
-            
-            // Clear interval setelah 30 detik untuk menghindari memory leak
-            setTimeout(() => {
-                clearInterval(photoCheckInterval);
-            }, 30000);
-        }
-        
-        // Scroll ke field pertama yang error
-        function scrollToFirstError() {
-            const errorField = document.querySelector('.border-red-500');
-            if (errorField) {
-                errorField.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
-                });
-                
-                // Focus hanya jika bukan foto section
-                if (errorField.tagName !== 'DIV' || !errorField.classList.contains('border-dashed')) {
-                    errorField.focus();
-                }
-            }
         }
 
         // Handle form submission
         document.getElementById('journalForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validasi form terlebih dahulu
             const errors = validateForm();
-            
             if (errors.length > 0) {
-                // Tampilkan error pertama
                 showMessage('error', `❌ ${errors[0]}`);
-                
-                // Scroll ke field yang error
-                scrollToFirstError();
-                
-                // Tampilkan semua error di console untuk debugging
-                console.log('❌ Validation errors:', errors);
                 return;
             }
             
@@ -1632,7 +923,7 @@
                 
                 let fotoLink = 'Tidak ada foto';
                 
-                // Upload foto ke Google Drive jika ada (Method 1 Only)
+                // Upload foto ke Google Drive jika ada (Multiple Methods)
                 if (capturedPhotoData) {
                     submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Mengupload foto...';
                     
@@ -1642,17 +933,23 @@
                     const fileName = `jurnal_${timestamp}_${kelas}_${guru}.jpg`;
                     
                     try {
-                        console.log('🚀 Starting FormData upload...');
+                        console.log('🚀 Starting photo upload with multiple fallback methods...');
                         fotoLink = await uploadPhotoToDrive(capturedPhotoData, fileName);
                         console.log('✅ Foto berhasil diupload ke Google Drive:', fotoLink);
+                        
+                        // Validate link
+                        if (!fotoLink || fotoLink === 'Tidak ada foto') {
+                            throw new Error('Upload berhasil tapi link tidak valid');
+                        }
+                        
                     } catch (uploadError) {
-                        console.error('❌ Gagal upload foto:', uploadError);
+                        console.error('❌ Semua metode upload gagal:', uploadError);
                         
                         // Fallback: simpan dengan keterangan error
                         fotoLink = `Upload gagal - ${fileName} (Error: ${uploadError.message})`;
                         
                         // Show warning tapi tetap lanjut simpan jurnal
-                        showMessage('error', `⚠️ Foto gagal diupload: ${uploadError.message}. Jurnal tetap akan disimpan.`);
+                        showMessage('error', `⚠️ Foto gagal diupload: ${uploadError.message}. Jurnal tetap akan disimpan tanpa foto.`);
                         
                         // Wait 3 seconds before continuing
                         await new Promise(resolve => setTimeout(resolve, 3000));
@@ -1692,12 +989,6 @@
                     document.getElementById('photoData').value = '';
                     setCurrentDate();
                     
-                    // Remove any error highlights
-                    document.querySelectorAll('.border-red-500').forEach(field => {
-                        field.classList.remove('border-red-500', 'bg-red-50');
-                        field.classList.add('border-gray-200');
-                    });
-                    
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     showMessage('error', result.error || 'Gagal menyimpan data. Silakan coba lagi.');
@@ -1711,97 +1002,13 @@
             }
         });
 
-        // Test connection to Apps Script dengan validasi URL
-        async function testConnection() {
-            console.log('🧪 Testing connection to Apps Script...');
-            console.log('🔗 URL:', SCRIPT_URL);
-            
-            // Validasi URL format
-            if (!SCRIPT_URL || !SCRIPT_URL.includes('script.google.com')) {
-                console.error('❌ URL Apps Script tidak valid!');
-                console.log('💡 Pastikan URL menggunakan format: https://script.google.com/macros/s/[SCRIPT_ID]/exec');
-                updateDebugInfo('❌ URL Apps Script tidak valid - periksa SCRIPT_URL');
-                return false;
-            }
-            
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'GET',
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                console.log('🔍 Connection test - Status:', response.status);
-                console.log('🔍 Connection test - Headers:', Object.fromEntries(response.headers.entries()));
-                
-                const text = await response.text();
-                console.log('🔍 Connection test - Response preview:', text.substring(0, 300));
-                
-                if (response.status === 200) {
-                    console.log('✅ Apps Script endpoint is accessible');
-                    updateDebugInfo('✅ Koneksi ke Apps Script berhasil');
-                    return true;
-                } else if (response.status === 302 || response.status === 301) {
-                    console.log('🔄 Apps Script redirect detected - this is normal');
-                    updateDebugInfo('🔄 Apps Script redirect - normal behavior');
-                    return true;
-                } else {
-                    console.log('⚠️ Unexpected status code:', response.status);
-                    updateDebugInfo(`⚠️ Status code: ${response.status}`);
-                    return false;
-                }
-                
-            } catch (error) {
-                console.error('❌ Connection test failed:', error);
-                
-                if (error.name === 'AbortError') {
-                    updateDebugInfo('❌ Connection timeout - periksa internet');
-                } else if (error.message.includes('Failed to fetch')) {
-                    updateDebugInfo('❌ Network error - periksa CORS atau URL');
-                } else {
-                    updateDebugInfo(`❌ Connection error: ${error.message}`);
-                }
-                
-                return false;
-            }
-        }
-
-        // Initialize - SIMPLIFIED untuk fokus pada upload foto
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setCurrentDate();
-            
-            console.log('🎯 Aplikasi Jurnal Pembelajaran dimulai...');
-            console.log('🔗 URL Apps Script:', SCRIPT_URL);
-            console.log('📸 Focus: Upload foto dengan link yang bisa dibuka');
-            
-            // Langsung load guru dari HTML
-            console.log('👥 Loading guru dari HTML...');
             loadGuru();
-            
             setInterval(setCurrentDate, 60000);
-            
-            console.log('✅ Aplikasi siap digunakan!');
-            console.log('📋 Data guru: Loaded from HTML');
-            console.log('📸 Upload method: Enhanced FormData dengan link validation');
-            console.log('🔗 Link foto: Akan menghasilkan link Google Drive yang bisa dibuka');
-            
-            // Setup retry button event listener (jika diperlukan)
-            const retryBtn = document.getElementById('retryLoadGuru');
-            if (retryBtn) {
-                retryBtn.addEventListener('click', () => {
-                    console.log('🔄 Retry: Loading guru dari HTML...');
-                    loadGuru();
-                });
-            }
+            console.log('✅ Aplikasi siap digunakan dengan multiple upload methods!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a33eb038f0fad',t:'MTc1OTYzODgyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a50dcb1b8b5e7',t:'MTc1OTY0MDAxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
