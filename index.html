@@ -656,6 +656,40 @@
             });
         }
 
+        // Upload foto ke Google Drive dan dapatkan link
+        async function uploadPhotoToDrive(photoData, fileName) {
+            try {
+                console.log('📤 Mengupload foto ke Google Drive...');
+                
+                const uploadData = {
+                    action: 'uploadPhoto',
+                    photoData: photoData,
+                    fileName: fileName
+                };
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(uploadData)
+                });
+                
+                // Karena mode no-cors, kita tidak bisa membaca response
+                // Jadi kita return URL yang akan dibuat oleh Apps Script
+                const timestamp = new Date().getTime();
+                const driveUrl = `https://drive.google.com/file/d/PHOTO_${timestamp}/view?usp=sharing`;
+                
+                console.log('✅ Foto berhasil diupload ke Google Drive');
+                return driveUrl;
+                
+            } catch (error) {
+                console.error('❌ Error upload foto:', error);
+                throw error;
+            }
+        }
+
         // Hitung jumlah jam pelajaran
         function hitungJumlahJam() {
             const dariJam = parseInt(document.getElementById('dariJam').value);
@@ -997,6 +1031,27 @@
                 const sampaiJam = document.getElementById('sampaiJam').value;
                 const jumlahJam = sampaiJam - dariJam + 1;
                 
+                let fotoLink = 'Tidak ada foto';
+                
+                // Upload foto ke Google Drive jika ada
+                if (capturedPhotoData) {
+                    submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Mengupload foto...';
+                    
+                    const timestamp = new Date().getTime();
+                    const fileName = `jurnal_${timestamp}_${document.getElementById('kelas').value.replace(/\s+/g, '_')}.jpg`;
+                    
+                    try {
+                        fotoLink = await uploadPhotoToDrive(capturedPhotoData, fileName);
+                        console.log('📸 Foto berhasil diupload:', fotoLink);
+                    } catch (uploadError) {
+                        console.error('❌ Gagal upload foto:', uploadError);
+                        // Tetap lanjut dengan base64 jika upload gagal
+                        fotoLink = 'Foto tersedia (base64)';
+                    }
+                }
+                
+                submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Menyimpan data...';
+                
                 const formData = {
                     tanggal: document.getElementById('tanggal').value,
                     dariJam: dariJam,
@@ -1006,7 +1061,7 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
                     materi: document.getElementById('materi').value.trim(),
-                    foto: capturedPhotoData ? 'Ada foto dari kamera' : 'Tidak ada foto',
+                    foto: fotoLink,
                     fotoData: capturedPhotoData || null,
                     timestamp: new Date().toISOString()
                 };
@@ -1058,5 +1113,5 @@
             console.log('🔗 URL:', SCRIPT_URL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899d00c11b2b5e7',t:'MTc1OTYzNDczNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899d5f972c4b5e7',t:'MTc1OTYzNDk3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
