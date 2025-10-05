@@ -228,8 +228,6 @@
             <div class="w-24 h-1 bg-gradient-to-r from-yellow-300 to-blue-300 rounded-full mx-auto opacity-80"></div>
         </div>
 
-
-
         <!-- Main Form -->
         <div class="bg-white rounded-2xl card-shadow p-8 fade-in">
             <form id="journalForm" class="space-y-6">
@@ -303,6 +301,8 @@
                         <select id="guru" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
                             <option value="">Memuat data guru...</option>
                         </select>
+                        <!-- Debug info -->
+                        <div id="guruDebug" class="text-xs text-gray-500 mt-1 hidden"></div>
                     </div>
                 </div>
 
@@ -363,8 +363,6 @@
                     <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl btn-hover transition-all duration-300 text-lg">
                         💾 Simpan Jurnal
                     </button>
-                    
-
                 </div>
             </form>
         </div>
@@ -407,7 +405,7 @@
         // Production mode - menggunakan Google Apps Script
         const DEMO_MODE = false;
         
-        // Google Apps Script Web App URL - Sudah terhubung!
+        // Google Apps Script Web App URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4nFd5EgBVn65PiYODKtRnnh1SUPJT-DemoWODa90aY8UL3ejuifioKXbvlYo5cGJJNw/exec';
 
         // Set tanggal otomatis
@@ -424,85 +422,185 @@
             document.getElementById('tanggal').value = dateString;
         }
 
-        // Load data guru dari Google Sheets menggunakan JSONP
+        // Debug function
+        function updateDebugInfo(message) {
+            const debugDiv = document.getElementById('guruDebug');
+            debugDiv.textContent = message;
+            debugDiv.classList.remove('hidden');
+            console.log('🔍 Debug:', message);
+        }
+
+        // Load data guru dengan multiple methods
         async function loadGuru() {
             const guruSelect = document.getElementById('guru');
             guruSelect.innerHTML = '<option value="">Memuat data guru...</option>';
             
+            updateDebugInfo('Mencoba memuat data guru...');
+            
+            // Method 1: Try JSONP
             try {
-                console.log('📥 Memuat data guru dari Google Sheets...');
-                
-                // Menggunakan JSONP untuk menghindari CORS
+                updateDebugInfo('Mencoba JSONP method...');
+                const success = await tryJSONPMethod();
+                if (success) {
+                    updateDebugInfo('✅ JSONP berhasil!');
+                    return;
+                }
+            } catch (error) {
+                updateDebugInfo('JSONP gagal: ' + error.message);
+            }
+            
+            // Method 2: Try fetch with different approaches
+            try {
+                updateDebugInfo('Mencoba Fetch method...');
+                const success = await tryFetchMethod();
+                if (success) {
+                    updateDebugInfo('✅ Fetch berhasil!');
+                    return;
+                }
+            } catch (error) {
+                updateDebugInfo('Fetch gagal: ' + error.message);
+            }
+            
+            // Method 3: Try alternative URL format
+            try {
+                updateDebugInfo('Mencoba alternative URL...');
+                const success = await tryAlternativeURL();
+                if (success) {
+                    updateDebugInfo('✅ Alternative URL berhasil!');
+                    return;
+                }
+            } catch (error) {
+                updateDebugInfo('Alternative URL gagal: ' + error.message);
+            }
+            
+            // Fallback
+            updateDebugInfo('⚠️ Menggunakan data fallback');
+            loadFallbackGuru();
+        }
+
+        // Method 1: JSONP
+        function tryJSONPMethod() {
+            return new Promise((resolve, reject) => {
                 const callbackName = 'guruCallback_' + Date.now();
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('JSONP timeout (5s)'));
+                }, 5000);
                 
-                return new Promise((resolve, reject) => {
-                    // Buat callback function
-                    window[callbackName] = function(response) {
-                        try {
-                            if (response.success && response.data) {
-                                // Clear loading message
-                                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
-                                
-                                // Add guru options
-                                response.data.forEach(nama => {
-                                    if (nama && nama.trim()) {
-                                        const option = document.createElement('option');
-                                        option.value = nama;
-                                        option.textContent = nama;
-                                        guruSelect.appendChild(option);
-                                    }
-                                });
-                                
-                                console.log('✅ Data guru berhasil dimuat:', response.data.length, 'guru');
-                                resolve(response.data);
-                            } else {
-                                throw new Error('Invalid response format');
-                            }
-                        } catch (error) {
-                            console.error('❌ Error processing guru data:', error);
-                            loadFallbackGuru();
-                            reject(error);
-                        } finally {
-                            // Cleanup
-                            delete window[callbackName];
-                            const script = document.getElementById(callbackName);
-                            if (script) script.remove();
+                function cleanup() {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script) script.remove();
+                }
+                
+                window[callbackName] = function(response) {
+                    cleanup();
+                    try {
+                        console.log('JSONP Response:', response);
+                        if (response && response.success && response.data && Array.isArray(response.data)) {
+                            populateGuruDropdown(response.data);
+                            resolve(true);
+                        } else {
+                            reject(new Error('Invalid JSONP response format'));
                         }
-                    };
-                    
-                    // Buat script tag untuk JSONP
-                    const script = document.createElement('script');
-                    script.id = callbackName;
-                    script.src = `${SCRIPT_URL}?action=getGuru&callback=${callbackName}`;
-                    script.onerror = function() {
-                        console.warn('⚠️ Gagal memuat dari Google Sheets, menggunakan data fallback');
-                        loadFallbackGuru();
-                        delete window[callbackName];
-                        reject(new Error('Script load failed'));
-                    };
-                    
-                    document.head.appendChild(script);
-                    
-                    // Timeout fallback
-                    setTimeout(() => {
-                        if (window[callbackName]) {
-                            console.warn('⚠️ Timeout loading guru, menggunakan data fallback');
-                            loadFallbackGuru();
-                            delete window[callbackName];
-                            const script = document.getElementById(callbackName);
-                            if (script) script.remove();
-                            reject(new Error('Timeout'));
-                        }
-                    }, 10000);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `${SCRIPT_URL}?action=getGuru&callback=${callbackName}&t=${Date.now()}`;
+                script.onerror = () => {
+                    cleanup();
+                    reject(new Error('JSONP script load failed'));
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+
+        // Method 2: Fetch
+        async function tryFetchMethod() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getGuru&format=json&t=${Date.now()}`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
                 });
                 
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Fetch Response:', data);
+                    if (data && data.success && data.data && Array.isArray(data.data)) {
+                        populateGuruDropdown(data.data);
+                        return true;
+                    }
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             } catch (error) {
-                console.error('❌ Error loading guru:', error);
-                loadFallbackGuru();
+                clearTimeout(timeoutId);
+                throw error;
             }
         }
 
-        // Load fallback guru jika gagal dari sheets
+        // Method 3: Alternative URL format
+        async function tryAlternativeURL() {
+            const altUrl = SCRIPT_URL.replace('/exec', '/dev');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            try {
+                const response = await fetch(`${altUrl}?action=getGuru&t=${Date.now()}`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    mode: 'cors'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Alternative URL Response:', data);
+                    if (data && data.success && data.data && Array.isArray(data.data)) {
+                        populateGuruDropdown(data.data);
+                        return true;
+                    }
+                }
+                throw new Error(`Alt URL HTTP ${response.status}`);
+            } catch (error) {
+                clearTimeout(timeoutId);
+                throw error;
+            }
+        }
+
+        // Populate dropdown
+        function populateGuruDropdown(guruData) {
+            const guruSelect = document.getElementById('guru');
+            guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+            
+            guruData.forEach(nama => {
+                if (nama && nama.trim()) {
+                    const option = document.createElement('option');
+                    option.value = nama.trim();
+                    option.textContent = nama.trim();
+                    guruSelect.appendChild(option);
+                }
+            });
+            
+            console.log('✅ Dropdown populated with', guruData.length, 'guru');
+        }
+
+        // Load fallback guru
         function loadFallbackGuru() {
             const guruSelect = document.getElementById('guru');
             const fallbackGuru = [
@@ -512,17 +610,13 @@
                 'Dr. Maya Sari, M.Pd',
                 'Andi Pratama, S.Pd',
                 'Dewi Kartika, S.Pd',
-                'Rudi Hermawan, M.Kom'
+                'Rudi Hermawan, M.Kom',
+                'Lina Marlina, S.Pd',
+                'Hendra Gunawan, M.Kom',
+                'Ratna Sari, S.Pd'
             ];
             
-            guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
-            fallbackGuru.forEach(nama => {
-                const option = document.createElement('option');
-                option.value = nama;
-                option.textContent = nama;
-                guruSelect.appendChild(option);
-            });
-            
+            populateGuruDropdown(fallbackGuru);
             console.log('📋 Menggunakan data guru fallback');
         }
 
@@ -531,7 +625,6 @@
             return new Promise((resolve, reject) => {
                 console.log('📤 Mengirim data ke Google Sheets...');
                 
-                // Prepare data for Google Sheets
                 const dataToSend = {
                     action: 'saveJurnal',
                     data: formData
@@ -539,14 +632,13 @@
                 
                 fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Required for Google Apps Script
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(dataToSend)
                 })
                 .then(() => {
-                    // no-cors mode doesn't return response, assume success
                     console.log('✅ Data berhasil dikirim ke Google Sheets');
                     resolve({ success: true, message: 'Data berhasil disimpan ke Google Sheets' });
                 })
@@ -576,13 +668,9 @@
         // Show success animation
         function showSuccessAnimation() {
             const overlay = document.getElementById('successOverlay');
-            console.log('🎬 Menampilkan animasi sukses...');
-            
-            // Force display and trigger animation
             overlay.style.display = 'flex';
             overlay.classList.add('show');
             
-            // Hide after 3 seconds to allow full animation
             setTimeout(() => {
                 overlay.classList.remove('show');
                 setTimeout(() => {
@@ -597,10 +685,7 @@
             const errorMsg = document.getElementById('errorMessage');
             
             if (type === 'success') {
-                // Show animated checkmark first
                 showSuccessAnimation();
-                
-                // Then show success message after animation
                 setTimeout(() => {
                     successMsg.querySelector('p:last-child').textContent = message;
                     successMsg.classList.remove('hidden');
@@ -619,7 +704,7 @@
             }
         }
 
-        // Event listeners untuk dropdown jam
+        // Event listeners
         document.getElementById('dariJam').addEventListener('change', hitungJumlahJam);
         document.getElementById('sampaiJam').addEventListener('change', hitungJumlahJam);
 
@@ -630,21 +715,18 @@
         // Start camera
         document.getElementById('startCameraBtn').addEventListener('click', async function() {
             try {
-                // Check if getUserMedia is supported
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     throw new Error('Camera API tidak didukung di browser ini');
                 }
 
-                // Show loading state
                 const btn = this;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<div class="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Membuka kamera...';
                 btn.disabled = true;
 
-                // Try different camera constraints
                 let constraints = {
                     video: {
-                        facingMode: 'environment', // Back camera first
+                        facingMode: 'environment',
                         width: { ideal: 1280, max: 1920 },
                         height: { ideal: 720, max: 1080 }
                     }
@@ -653,14 +735,10 @@
                 try {
                     currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                 } catch (backCameraError) {
-                    console.log('Back camera failed, trying front camera:', backCameraError);
-                    // Fallback to front camera
                     constraints.video.facingMode = 'user';
                     try {
                         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                     } catch (frontCameraError) {
-                        console.log('Front camera failed, trying basic constraints:', frontCameraError);
-                        // Fallback to basic video
                         constraints = { video: true };
                         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
                     }
@@ -669,30 +747,24 @@
                 const video = document.getElementById('cameraVideo');
                 video.srcObject = currentStream;
 
-                // Wait for video to be ready
                 video.onloadedmetadata = function() {
                     video.play();
-                    console.log('Camera started successfully');
                 };
 
-                // Show camera preview, hide start button
                 document.getElementById('cameraSection').classList.add('hidden');
                 document.getElementById('cameraPreview').classList.remove('hidden');
                 document.getElementById('photoPreview').classList.add('hidden');
 
-                // Reset button
                 btn.innerHTML = originalText;
                 btn.disabled = false;
 
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 
-                // Reset button
                 const btn = this;
                 btn.innerHTML = '📷 Buka Kamera';
                 btn.disabled = false;
 
-                // Show detailed error message
                 let errorMessage = 'Tidak dapat mengakses kamera. ';
                 
                 if (error.name === 'NotAllowedError') {
@@ -717,25 +789,17 @@
             const canvas = document.getElementById('photoCanvas');
             const ctx = canvas.getContext('2d');
 
-            // Set canvas size to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            // Draw video frame to canvas
             ctx.drawImage(video, 0, 0);
-
-            // Convert to base64
             capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
 
-            // Show preview
             const previewImg = document.getElementById('previewImage');
             previewImg.src = capturedPhotoData;
             
-            // Hide camera, show photo preview
             document.getElementById('cameraPreview').classList.add('hidden');
             document.getElementById('photoPreview').classList.remove('hidden');
 
-            // Stop camera stream
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
                 currentStream = null;
@@ -765,7 +829,6 @@
         document.getElementById('usePhotoBtn').addEventListener('click', function() {
             if (capturedPhotoData) {
                 document.getElementById('photoData').value = capturedPhotoData;
-                // Keep photo preview visible
             }
         });
 
@@ -776,12 +839,10 @@
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
             
-            // Show loading
             submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Menyimpan...';
             submitBtn.disabled = true;
             
             try {
-                // Collect form data
                 const dariJam = document.getElementById('dariJam').value;
                 const sampaiJam = document.getElementById('sampaiJam').value;
                 const jumlahJam = sampaiJam - dariJam + 1;
@@ -800,13 +861,11 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // Save data to Google Sheets
                 const result = await saveToGoogleSheets(formData);
                 
                 if (result.success) {
                     showMessage('success', 'Data berhasil disimpan ke Google Sheets!');
                     
-                    // Reset form
                     document.getElementById('journalForm').reset();
                     document.getElementById('photoPreview').classList.add('hidden');
                     document.getElementById('cameraPreview').classList.add('hidden');
@@ -816,7 +875,6 @@
                     document.getElementById('photoData').value = '';
                     setCurrentDate();
                     
-                    // Scroll to top
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                     showMessage('error', result.error || 'Gagal menyimpan data. Silakan coba lagi.');
@@ -825,31 +883,21 @@
                 console.error('Submit error:', error);
                 showMessage('error', 'Terjadi kesalahan. Silakan coba lagi.');
             } finally {
-                // Reset button
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
 
-        // Test animation button
-        document.getElementById('testAnimationBtn').addEventListener('click', function() {
-            console.log('🎬 Testing animation...');
-            showSuccessAnimation();
-        });
-
-        // Initialize when page loads
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setCurrentDate();
             loadGuru();
             
-            // Update date every minute
             setInterval(setCurrentDate, 60000);
             
             console.log('🎯 Aplikasi Jurnal Pembelajaran siap digunakan!');
-            console.log('📊 Mode: Production (data disimpan ke Google Sheets)');
-            console.log('✅ Terhubung ke Google Apps Script');
             console.log('🔗 URL:', SCRIPT_URL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899bc8d021ab5e7',t:'MTc1OTYzMzkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899c4f8859db5e7',t:'MTc1OTYzNDI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
