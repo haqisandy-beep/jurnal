@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jurnal Kelas Digital</title>
+    <title>Jurnal Pembelajaran</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -70,7 +70,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Success animation with construction equipment */
+        /* Success animation with thumbs up person */
         .success-overlay {
             position: fixed;
             top: 0;
@@ -97,42 +97,33 @@
             gap: 20px;
         }
 
-        .construction-circle {
+        .thumbs-circle {
             width: 140px;
             height: 140px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             transform: scale(0);
             animation: scaleIn 0.6s ease-out forwards;
-            box-shadow: 0 10px 30px rgba(251, 191, 36, 0.4);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
         }
 
-        .equipment-icon {
+        .person-icon {
             font-size: 4rem;
             opacity: 0;
-            animation: iconAppear 0.4s ease-out 0.6s forwards;
+            animation: personAppear 0.4s ease-out 0.6s forwards;
         }
 
-        .camera-icon {
+        .winking-eye {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            width: 50px;
-            height: 50px;
-            background: #3b82f6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: white;
-            transform: scale(0);
-            animation: cameraPopIn 0.4s ease-out 1s forwards;
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+            top: 20px;
+            right: 35px;
+            font-size: 1.2rem;
+            opacity: 0;
+            animation: winkAnimation 2s ease-in-out 1s infinite;
         }
 
         .success-text {
@@ -157,7 +148,7 @@
             }
         }
 
-        @keyframes iconAppear {
+        @keyframes personAppear {
             0% {
                 opacity: 0;
                 transform: scale(0) rotate(45deg);
@@ -168,15 +159,12 @@
             }
         }
 
-        @keyframes cameraPopIn {
-            0% {
-                transform: scale(0);
+        @keyframes winkAnimation {
+            0%, 20%, 50%, 80%, 100% {
+                opacity: 0;
             }
-            50% {
-                transform: scale(1.3);
-            }
-            100% {
-                transform: scale(1);
+            10%, 40% {
+                opacity: 1;
             }
         }
 
@@ -236,21 +224,11 @@
                     </div>
                 </div>
             </div>
-            <h1 class="text-5xl font-bold text-white mb-2 tracking-wide">Jurnal</h1>
+            <h1 class="text-5xl font-bold text-white mb-2 tracking-wide">Jurnal Pembelajaran</h1>
             <div class="w-24 h-1 bg-gradient-to-r from-yellow-300 to-blue-300 rounded-full mx-auto opacity-80"></div>
         </div>
 
-        <!-- Setup Notice -->
-        <div id="setupNotice" class="mb-6 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-xl fade-in">
-            <div class="flex items-center">
-                <span class="text-2xl mr-3">🔗</span>
-                <div>
-                    <p class="font-semibold">Mode Production - Terhubung ke Google Sheets</p>
-                    <p class="text-sm">Pastikan Google Apps Script sudah dikonfigurasi dengan benar.</p>
-                    <p class="text-xs mt-1">URL Script: <code class="bg-blue-200 px-1 rounded">YOUR_SCRIPT_ID</code></p>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Main Form -->
         <div class="bg-white rounded-2xl card-shadow p-8 fade-in">
@@ -323,7 +301,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">👨‍🏫 Guru</label>
                         <select id="guru" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
-                            <option value="">Pilih Guru</option>
+                            <option value="">Memuat data guru...</option>
                         </select>
                     </div>
                 </div>
@@ -386,12 +364,7 @@
                         💾 Simpan Jurnal
                     </button>
                     
-                    <!-- Test Animation Button -->
-                    <div>
-                        <button type="button" id="testAnimationBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300 text-sm">
-                            🎬 Test Animasi
-                        </button>
-                    </div>
+
                 </div>
             </form>
         </div>
@@ -402,7 +375,7 @@
                 <span class="text-2xl mr-3">✅</span>
                 <div>
                     <p class="font-semibold">Jurnal berhasil disimpan!</p>
-                    <p class="text-sm">Data telah tersimpan (mode demo).</p>
+                    <p class="text-sm">Data telah tersimpan ke Google Sheets.</p>
                 </div>
             </div>
         </div>
@@ -421,9 +394,9 @@
         <!-- Success Overlay -->
         <div id="successOverlay" class="success-overlay">
             <div class="success-animation">
-                <div class="construction-circle">
-                    <div class="equipment-icon">🚚</div>
-                    <div class="camera-icon">📷</div>
+                <div class="thumbs-circle">
+                    <div class="person-icon">👍</div>
+                    <div class="winking-eye">😉</div>
                 </div>
                 <div class="success-text">Jurnal Tersimpan!</div>
             </div>
@@ -434,8 +407,8 @@
         // Production mode - menggunakan Google Apps Script
         const DEMO_MODE = false;
         
-        // Google Apps Script Web App URL - GANTI DENGAN URL ANDA
-        const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+        // Google Apps Script Web App URL - Sudah terhubung!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4nFd5EgBVn65PiYODKtRnnh1SUPJT-DemoWODa90aY8UL3ejuifioKXbvlYo5cGJJNw/exec';
 
         // Set tanggal otomatis
         function setCurrentDate() {
@@ -451,30 +424,106 @@
             document.getElementById('tanggal').value = dateString;
         }
 
-        // Load data guru dari Google Sheets
+        // Load data guru dari Google Sheets menggunakan JSONP
         async function loadGuru() {
             const guruSelect = document.getElementById('guru');
             guruSelect.innerHTML = '<option value="">Memuat data guru...</option>';
             
             try {
-                const guruList = await loadGuruFromSheets();
+                console.log('📥 Memuat data guru dari Google Sheets...');
                 
-                // Clear loading message
-                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+                // Menggunakan JSONP untuk menghindari CORS
+                const callbackName = 'guruCallback_' + Date.now();
                 
-                // Add guru options
-                guruList.forEach(nama => {
-                    const option = document.createElement('option');
-                    option.value = nama;
-                    option.textContent = nama;
-                    guruSelect.appendChild(option);
+                return new Promise((resolve, reject) => {
+                    // Buat callback function
+                    window[callbackName] = function(response) {
+                        try {
+                            if (response.success && response.data) {
+                                // Clear loading message
+                                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+                                
+                                // Add guru options
+                                response.data.forEach(nama => {
+                                    if (nama && nama.trim()) {
+                                        const option = document.createElement('option');
+                                        option.value = nama;
+                                        option.textContent = nama;
+                                        guruSelect.appendChild(option);
+                                    }
+                                });
+                                
+                                console.log('✅ Data guru berhasil dimuat:', response.data.length, 'guru');
+                                resolve(response.data);
+                            } else {
+                                throw new Error('Invalid response format');
+                            }
+                        } catch (error) {
+                            console.error('❌ Error processing guru data:', error);
+                            loadFallbackGuru();
+                            reject(error);
+                        } finally {
+                            // Cleanup
+                            delete window[callbackName];
+                            const script = document.getElementById(callbackName);
+                            if (script) script.remove();
+                        }
+                    };
+                    
+                    // Buat script tag untuk JSONP
+                    const script = document.createElement('script');
+                    script.id = callbackName;
+                    script.src = `${SCRIPT_URL}?action=getGuru&callback=${callbackName}`;
+                    script.onerror = function() {
+                        console.warn('⚠️ Gagal memuat dari Google Sheets, menggunakan data fallback');
+                        loadFallbackGuru();
+                        delete window[callbackName];
+                        reject(new Error('Script load failed'));
+                    };
+                    
+                    document.head.appendChild(script);
+                    
+                    // Timeout fallback
+                    setTimeout(() => {
+                        if (window[callbackName]) {
+                            console.warn('⚠️ Timeout loading guru, menggunakan data fallback');
+                            loadFallbackGuru();
+                            delete window[callbackName];
+                            const script = document.getElementById(callbackName);
+                            if (script) script.remove();
+                            reject(new Error('Timeout'));
+                        }
+                    }, 10000);
                 });
                 
-                console.log('📋 Data guru berhasil dimuat dari Google Sheets');
             } catch (error) {
                 console.error('❌ Error loading guru:', error);
-                guruSelect.innerHTML = '<option value="">Error memuat data guru</option>';
+                loadFallbackGuru();
             }
+        }
+
+        // Load fallback guru jika gagal dari sheets
+        function loadFallbackGuru() {
+            const guruSelect = document.getElementById('guru');
+            const fallbackGuru = [
+                'Drs. Ahmad Wijaya, M.Pd',
+                'Siti Nurhaliza, S.Pd', 
+                'Budi Santoso, S.Kom',
+                'Dr. Maya Sari, M.Pd',
+                'Andi Pratama, S.Pd',
+                'Dewi Kartika, S.Pd',
+                'Rudi Hermawan, M.Kom'
+            ];
+            
+            guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+            fallbackGuru.forEach(nama => {
+                const option = document.createElement('option');
+                option.value = nama;
+                option.textContent = nama;
+                guruSelect.appendChild(option);
+            });
+            
+            console.log('📋 Menggunakan data guru fallback');
         }
 
         // Kirim data ke Google Sheets
@@ -504,44 +553,6 @@
                 .catch(error => {
                     console.error('❌ Error mengirim ke Google Sheets:', error);
                     reject({ success: false, error: 'Gagal mengirim data ke Google Sheets: ' + error.message });
-                });
-            });
-        }
-
-        // Load data guru dari Google Sheets
-        function loadGuruFromSheets() {
-            return new Promise((resolve, reject) => {
-                console.log('📥 Memuat data guru dari Google Sheets...');
-                
-                fetch(SCRIPT_URL + '?action=getGuru', {
-                    method: 'GET',
-                    mode: 'no-cors'
-                })
-                .then(() => {
-                    // Fallback guru list jika tidak bisa load dari sheets
-                    const fallbackGuru = [
-                        'Drs. Ahmad Wijaya, M.Pd',
-                        'Siti Nurhaliza, S.Pd', 
-                        'Budi Santoso, S.Kom',
-                        'Dr. Maya Sari, M.Pd',
-                        'Andi Pratama, S.Pd',
-                        'Dewi Kartika, S.Pd',
-                        'Rudi Hermawan, M.Kom'
-                    ];
-                    resolve(fallbackGuru);
-                })
-                .catch(error => {
-                    console.warn('⚠️ Gagal memuat dari Google Sheets, menggunakan data fallback');
-                    const fallbackGuru = [
-                        'Drs. Ahmad Wijaya, M.Pd',
-                        'Siti Nurhaliza, S.Pd', 
-                        'Budi Santoso, S.Kom',
-                        'Dr. Maya Sari, M.Pd',
-                        'Andi Pratama, S.Pd',
-                        'Dewi Kartika, S.Pd',
-                        'Rudi Hermawan, M.Kom'
-                    ];
-                    resolve(fallbackGuru);
                 });
             });
         }
@@ -834,22 +845,11 @@
             // Update date every minute
             setInterval(setCurrentDate, 60000);
             
-            console.log('🎯 Aplikasi Jurnal Kelas Digital siap digunakan!');
+            console.log('🎯 Aplikasi Jurnal Pembelajaran siap digunakan!');
             console.log('📊 Mode: Production (data disimpan ke Google Sheets)');
-            console.log('🔧 Pastikan SCRIPT_URL sudah diatur dengan benar');
-            console.log('📝 URL saat ini:', SCRIPT_URL);
+            console.log('✅ Terhubung ke Google Apps Script');
+            console.log('🔗 URL:', SCRIPT_URL);
         });
-
-        // Check Google Apps Script connection
-        setTimeout(() => {
-            if (SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
-                console.warn('⚠️ PERINGATAN: Ganti YOUR_SCRIPT_ID dengan ID Google Apps Script yang sebenarnya!');
-                console.log('📋 Langkah setup:');
-                console.log('1. Buat Google Apps Script baru');
-                console.log('2. Deploy sebagai Web App');
-                console.log('3. Ganti YOUR_SCRIPT_ID dengan ID yang didapat');
-            }
-        }, 2000);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899981d76780fad',t:'MTc1OTYzMjQ0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899bc8d021ab5e7',t:'MTc1OTYzMzkzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
