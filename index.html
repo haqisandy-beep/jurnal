@@ -407,15 +407,8 @@
     </div>
 
     <script>
-        // Production mode - menggunakan Google Apps Script
-        const DEMO_MODE = false;
-        
-        // Google Apps Script Web App URL - GANTI DENGAN URL DEPLOY ANDA
+        // Google Apps Script Web App URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgZQqUvGVJsJJLL5bjh-GvSFC_7YH97pYH90oSsUTstA21mZ7UzlMnzy3iT7j--BxpAw/exec';
-        
-        // Spreadsheet configuration
-        const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
-        const GURU_SHEET_NAME = 'Guru';
 
         // Set tanggal otomatis
         function setCurrentDate() {
@@ -466,198 +459,38 @@
                 guruSelect.appendChild(option);
             });
             
-            console.log('✅ Data guru berhasil dimuat dari HTML');
+            console.log('✅ Data guru berhasil dimuat');
         }
 
-        // Upload foto ke Google Drive dengan multiple fallback methods
-        async function uploadPhotoToDrive(photoData, fileName) {
-            console.log('📤 Starting photo upload process...');
-            console.log('📊 File info:', { name: fileName, size: Math.round(photoData.length / 1024) + 'KB' });
-            
-            // Method 1: FormData Upload
-            try {
-                console.log('🚀 Method 1: Trying FormData upload...');
-                return await uploadViaFormData(photoData, fileName);
-            } catch (error) {
-                console.log('❌ Method 1 failed:', error.message);
-            }
-            
-            // Method 2: JSON Upload
-            try {
-                console.log('🚀 Method 2: Trying JSON upload...');
-                return await uploadViaJSON(photoData, fileName);
-            } catch (error) {
-                console.log('❌ Method 2 failed:', error.message);
-            }
-            
-            // Method 3: Base64 Upload
-            try {
-                console.log('🚀 Method 3: Trying Base64 upload...');
-                return await uploadViaBase64(photoData, fileName);
-            } catch (error) {
-                console.log('❌ Method 3 failed:', error.message);
-            }
-            
-            // All methods failed
-            throw new Error('Semua metode upload gagal. Periksa koneksi internet dan Apps Script.');
-        }
-
-        // Method 1: FormData Upload
-        async function uploadViaFormData(photoData, fileName) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-            
-            try {
-                // Convert base64 to blob
-                const base64Data = photoData.split(',')[1];
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        // Compress image function
+        function compressImage(base64, quality = 0.6, maxWidth = 600) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
                 
-                // Create FormData
-                const formData = new FormData();
-                formData.append('action', 'uploadPhoto');
-                formData.append('fileName', fileName);
-                formData.append('photoFile', blob, fileName);
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                return await processUploadResponse(response, 'FormData');
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 2: JSON Upload
-        async function uploadViaJSON(photoData, fileName) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000);
-            
-            try {
-                const payload = {
-                    action: 'uploadPhoto',
-                    fileName: fileName,
-                    photoData: photoData
-                };
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                clearTimeout(timeoutId);
-                return await processUploadResponse(response, 'JSON');
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Method 3: Base64 Upload
-        async function uploadViaBase64(photoData, fileName) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000);
-            
-            try {
-                const payload = {
-                    action: 'uploadPhotoBase64',
-                    fileName: fileName,
-                    photoData: photoData
-                };
-                
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                clearTimeout(timeoutId);
-                return await processUploadResponse(response, 'Base64');
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        // Process upload response
-        async function processUploadResponse(response, method) {
-            console.log(`📡 ${method} Response status:`, response.status);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const responseText = await response.text();
-            console.log(`📋 ${method} Raw response:`, responseText.substring(0, 200) + '...');
-            
-            try {
-                const result = JSON.parse(responseText);
-                console.log(`📊 ${method} Parsed response:`, result);
-                
-                if (result.success && result.fileUrl) {
-                    console.log(`✅ ${method} upload successful:`, result.fileUrl);
-                    return result.fileUrl;
-                } else if (result.fileId) {
-                    const viewLink = `https://drive.google.com/file/d/${result.fileId}/view?usp=sharing`;
-                    console.log(`✅ ${method} upload successful (generated link):`, viewLink);
-                    return viewLink;
-                } else {
-                    throw new Error(result.error || `${method} upload failed - invalid response`);
-                }
-            } catch (parseError) {
-                console.log(`⚠️ ${method} JSON parse failed, trying text extraction...`);
-                
-                // Extract link patterns
-                const linkPatterns = [
-                    /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/,
-                    /"fileUrl":\s*"([^"]+)"/,
-                    /"link":\s*"([^"]+)"/
-                ];
-                
-                for (const pattern of linkPatterns) {
-                    const match = responseText.match(pattern);
-                    if (match) {
-                        const extractedLink = match[1] || match[0];
-                        console.log(`🔗 ${method} link extracted:`, extractedLink);
-                        return extractedLink.replace(/["']/g, '');
+                img.onload = function() {
+                    // Calculate new dimensions
+                    let { width, height } = img;
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
                     }
-                }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and compress
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedBase64);
+                };
                 
-                // Extract fileId
-                const fileIdMatch = responseText.match(/[a-zA-Z0-9_-]{25,}/);
-                if (fileIdMatch) {
-                    const fileId = fileIdMatch[0];
-                    const generatedLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-                    console.log(`🔗 ${method} generated link from fileId:`, generatedLink);
-                    return generatedLink;
-                }
-                
-                throw new Error(`${method} - Cannot extract link from response`);
-            }
+                img.src = base64;
+            });
         }
 
-        // Kirim data ke Google Sheets
+        // Kirim data ke Google Sheets (termasuk foto base64)
         function saveToGoogleSheets(formData) {
             return new Promise((resolve, reject) => {
                 console.log('📤 Mengirim data ke Google Sheets...');
@@ -921,11 +754,12 @@
                 const sampaiJam = document.getElementById('sampaiJam').value;
                 const jumlahJam = sampaiJam - dariJam + 1;
                 
-                let fotoLink = 'Tidak ada foto';
+                let fotoBase64 = null;
+                let fotoInfo = 'Tidak ada foto';
                 
-                // Upload foto ke Google Drive jika ada (Multiple Methods)
+                // Compress dan simpan foto sebagai base64
                 if (capturedPhotoData) {
-                    submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Mengupload foto...';
+                    submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Memproses foto...';
                     
                     const timestamp = new Date().getTime();
                     const kelas = document.getElementById('kelas').value.replace(/\s+/g, '_');
@@ -933,26 +767,18 @@
                     const fileName = `jurnal_${timestamp}_${kelas}_${guru}.jpg`;
                     
                     try {
-                        console.log('🚀 Starting photo upload with multiple fallback methods...');
-                        fotoLink = await uploadPhotoToDrive(capturedPhotoData, fileName);
-                        console.log('✅ Foto berhasil diupload ke Google Drive:', fotoLink);
+                        console.log('📤 Compressing photo...');
                         
-                        // Validate link
-                        if (!fotoLink || fotoLink === 'Tidak ada foto') {
-                            throw new Error('Upload berhasil tapi link tidak valid');
-                        }
+                        // Compress image untuk menghemat space
+                        fotoBase64 = await compressImage(capturedPhotoData, 0.6, 600);
+                        fotoInfo = `FOTO_TERSIMPAN:${fileName}`;
                         
-                    } catch (uploadError) {
-                        console.error('❌ Semua metode upload gagal:', uploadError);
+                        console.log('✅ Foto berhasil dikompres:', Math.round(fotoBase64.length / 1024) + 'KB');
                         
-                        // Fallback: simpan dengan keterangan error
-                        fotoLink = `Upload gagal - ${fileName} (Error: ${uploadError.message})`;
-                        
-                        // Show warning tapi tetap lanjut simpan jurnal
-                        showMessage('error', `⚠️ Foto gagal diupload: ${uploadError.message}. Jurnal tetap akan disimpan tanpa foto.`);
-                        
-                        // Wait 3 seconds before continuing
-                        await new Promise(resolve => setTimeout(resolve, 3000));
+                    } catch (compressError) {
+                        console.error('❌ Error compressing photo:', compressError);
+                        fotoBase64 = capturedPhotoData; // fallback ke original
+                        fotoInfo = `FOTO_ORIGINAL:${fileName}`;
                     }
                 }
                 
@@ -967,17 +793,20 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
                     materi: document.getElementById('materi').value.trim(),
-                    foto: fotoLink,
-                    fotoData: capturedPhotoData || null,
+                    foto: fotoInfo,
+                    fotoBase64: fotoBase64, // Foto disimpan sebagai base64
                     timestamp: new Date().toISOString()
                 };
 
-                console.log('📝 Data yang akan disimpan:', formData);
+                console.log('📝 Data yang akan disimpan:', {
+                    ...formData,
+                    fotoBase64: fotoBase64 ? `${Math.round(fotoBase64.length / 1024)}KB base64` : null
+                });
 
                 const result = await saveToGoogleSheets(formData);
                 
                 if (result.success) {
-                    showMessage('success', 'Data berhasil disimpan ke Google Sheets!');
+                    showMessage('success', 'Jurnal dan foto berhasil disimpan!');
                     
                     // Reset form
                     document.getElementById('journalForm').reset();
@@ -1007,8 +836,8 @@
             setCurrentDate();
             loadGuru();
             setInterval(setCurrentDate, 60000);
-            console.log('✅ Aplikasi siap digunakan dengan multiple upload methods!');
+            console.log('✅ Aplikasi siap digunakan dengan penyimpanan foto base64!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a50dcb1b8b5e7',t:'MTc1OTY0MDAxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a58d1528a0452',t:'MTc1OTY0MDMzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
