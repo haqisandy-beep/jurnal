@@ -755,30 +755,22 @@
                 const jumlahJam = sampaiJam - dariJam + 1;
                 
                 let fotoBase64 = null;
-                let fotoInfo = 'Tidak ada foto';
                 
                 // Compress dan simpan foto sebagai base64
                 if (capturedPhotoData) {
                     submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Memproses foto...';
-                    
-                    const timestamp = new Date().getTime();
-                    const kelas = document.getElementById('kelas').value.replace(/\s+/g, '_');
-                    const guru = document.getElementById('guru').value.split(',')[0].replace(/\s+/g, '_');
-                    const fileName = `jurnal_${timestamp}_${kelas}_${guru}.jpg`;
                     
                     try {
                         console.log('📤 Compressing photo...');
                         
                         // Compress image untuk menghemat space
                         fotoBase64 = await compressImage(capturedPhotoData, 0.6, 600);
-                        fotoInfo = `FOTO_TERSIMPAN:${fileName}`;
                         
                         console.log('✅ Foto berhasil dikompres:', Math.round(fotoBase64.length / 1024) + 'KB');
                         
                     } catch (compressError) {
                         console.error('❌ Error compressing photo:', compressError);
                         fotoBase64 = capturedPhotoData; // fallback ke original
-                        fotoInfo = `FOTO_ORIGINAL:${fileName}`;
                     }
                 }
                 
@@ -793,13 +785,14 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
                     materi: document.getElementById('materi').value.trim(),
-                    foto: fotoInfo,
-                    fotoBase64: fotoBase64, // Foto disimpan sebagai base64
+                    foto: fotoBase64 || 'Tidak ada foto', // Langsung simpan base64 di kolom foto
+                    fotoBase64: fotoBase64, // Backup untuk kompatibilitas
                     timestamp: new Date().toISOString()
                 };
 
                 console.log('📝 Data yang akan disimpan:', {
                     ...formData,
+                    foto: fotoBase64 ? `${Math.round(fotoBase64.length / 1024)}KB base64` : 'Tidak ada foto',
                     fotoBase64: fotoBase64 ? `${Math.round(fotoBase64.length / 1024)}KB base64` : null
                 });
 
@@ -839,5 +832,5 @@
             console.log('✅ Aplikasi siap digunakan dengan penyimpanan foto base64!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a58d1528a0452',t:'MTc1OTY0MDMzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a6229c5aeaa09',t:'MTc1OTY0MDcyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
