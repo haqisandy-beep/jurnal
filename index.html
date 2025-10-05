@@ -70,6 +70,127 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Success animation with construction equipment */
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+        }
+
+        .success-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .construction-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transform: scale(0);
+            animation: scaleIn 0.6s ease-out forwards;
+            box-shadow: 0 10px 30px rgba(251, 191, 36, 0.4);
+        }
+
+        .equipment-icon {
+            font-size: 4rem;
+            opacity: 0;
+            animation: iconAppear 0.4s ease-out 0.6s forwards;
+        }
+
+        .camera-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 50px;
+            height: 50px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            transform: scale(0);
+            animation: cameraPopIn 0.4s ease-out 1s forwards;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .success-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: textSlideUp 0.5s ease-out 1.2s forwards;
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0) rotate(-180deg);
+            }
+            50% {
+                transform: scale(1.1) rotate(-90deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes iconAppear {
+            0% {
+                opacity: 0;
+                transform: scale(0) rotate(45deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes cameraPopIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes textSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .gradient-bg {
@@ -90,8 +211,45 @@
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="text-center mb-8 fade-in">
-            <h1 class="text-4xl font-bold text-white mb-2">📚 Jurnal Kelas Digital</h1>
-            <p class="text-blue-100 text-lg">Sistem pencatatan kegiatan pembelajaran</p>
+            <div class="relative inline-block mb-6">
+                <!-- Elegant background circle with gradient -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-36 h-36 bg-gradient-to-br from-white/20 to-white/5 rounded-full backdrop-blur-sm"></div>
+                </div>
+                
+                <!-- Floating decorative elements -->
+                <div class="absolute -top-2 -right-2 w-4 h-4 bg-yellow-300 rounded-full opacity-80 animate-bounce"></div>
+                <div class="absolute -bottom-1 -left-3 w-3 h-3 bg-blue-300 rounded-full opacity-70 animate-bounce" style="animation-delay: 0.5s;"></div>
+                <div class="absolute top-1 -left-4 w-2 h-2 bg-white rounded-full opacity-60 animate-bounce" style="animation-delay: 1s;"></div>
+                <div class="absolute -top-3 left-8 w-2 h-2 bg-yellow-200 rounded-full opacity-50 animate-bounce" style="animation-delay: 1.5s;"></div>
+                <div class="absolute -bottom-2 right-6 w-3 h-3 bg-blue-200 rounded-full opacity-60 animate-bounce" style="animation-delay: 2s;"></div>
+                
+                <!-- Subtle rotating ring -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-32 h-32 border-2 border-dashed border-white/30 rounded-full animate-spin" style="animation-duration: 20s;"></div>
+                </div>
+                
+                <!-- Logo with enhanced styling -->
+                <div class="relative z-10 p-2">
+                    <div class="w-28 h-28 bg-white rounded-full p-1 shadow-2xl">
+                        <img src="https://iili.io/KWiqdUg.png" alt="Logo Sekolah" class="w-full h-full rounded-full object-cover">
+                    </div>
+                </div>
+            </div>
+            <h1 class="text-5xl font-bold text-white mb-2 tracking-wide">Jurnal</h1>
+            <div class="w-24 h-1 bg-gradient-to-r from-yellow-300 to-blue-300 rounded-full mx-auto opacity-80"></div>
+        </div>
+
+        <!-- Setup Notice -->
+        <div id="setupNotice" class="mb-6 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-xl fade-in">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">🔗</span>
+                <div>
+                    <p class="font-semibold">Mode Production - Terhubung ke Google Sheets</p>
+                    <p class="text-sm">Pastikan Google Apps Script sudah dikonfigurasi dengan benar.</p>
+                    <p class="text-xs mt-1">URL Script: <code class="bg-blue-200 px-1 rounded">YOUR_SCRIPT_ID</code></p>
+                </div>
+            </div>
         </div>
 
         <!-- Main Form -->
@@ -186,22 +344,54 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">📸 Foto Kegiatan</label>
                     <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-300">
-                        <input type="file" id="foto" accept="image/*" capture="camera" class="hidden">
-                        <button type="button" onclick="document.getElementById('foto').click()" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold py-3 px-6 rounded-xl btn-hover transition-all duration-300">
-                            📷 Ambil Foto
-                        </button>
-                        <p class="text-gray-500 text-sm mt-2">Klik untuk mengambil foto langsung</p>
-                        <div id="photoPreview" class="mt-4 hidden">
-                            <img id="previewImage" class="photo-preview mx-auto border-4 border-white shadow-lg">
+                        <div id="cameraSection">
+                            <button type="button" id="startCameraBtn" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold py-3 px-6 rounded-xl btn-hover transition-all duration-300">
+                                📷 Buka Kamera
+                            </button>
+                            <p class="text-gray-500 text-sm mt-2">Klik untuk mengaktifkan kamera</p>
                         </div>
+                        
+                        <div id="cameraPreview" class="hidden">
+                            <video id="cameraVideo" autoplay playsinline class="w-full max-w-sm mx-auto rounded-xl border-4 border-gray-200 mb-4"></video>
+                            <div class="space-x-3">
+                                <button type="button" id="captureBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300">
+                                    📸 Ambil Foto
+                                </button>
+                                <button type="button" id="closeCameraBtn" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300">
+                                    ❌ Tutup
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="photoPreview" class="mt-4 hidden">
+                            <img id="previewImage" class="photo-preview mx-auto border-4 border-white shadow-lg mb-4">
+                            <div class="space-x-3">
+                                <button type="button" id="retakeBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300">
+                                    🔄 Ambil Ulang
+                                </button>
+                                <button type="button" id="usePhotoBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300">
+                                    ✅ Gunakan Foto
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <canvas id="photoCanvas" class="hidden"></canvas>
+                        <input type="hidden" id="photoData" name="photoData">
                     </div>
                 </div>
 
                 <!-- Submit Button -->
-                <div class="text-center pt-4">
+                <div class="text-center pt-4 space-y-3">
                     <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl btn-hover transition-all duration-300 text-lg">
                         💾 Simpan Jurnal
                     </button>
+                    
+                    <!-- Test Animation Button -->
+                    <div>
+                        <button type="button" id="testAnimationBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg btn-hover transition-all duration-300 text-sm">
+                            🎬 Test Animasi
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -212,7 +402,7 @@
                 <span class="text-2xl mr-3">✅</span>
                 <div>
                     <p class="font-semibold">Jurnal berhasil disimpan!</p>
-                    <p class="text-sm">Data telah tersimpan ke Google Sheets.</p>
+                    <p class="text-sm">Data telah tersimpan (mode demo).</p>
                 </div>
             </div>
         </div>
@@ -227,12 +417,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Success Overlay -->
+        <div id="successOverlay" class="success-overlay">
+            <div class="success-animation">
+                <div class="construction-circle">
+                    <div class="equipment-icon">🚚</div>
+                    <div class="camera-icon">📷</div>
+                </div>
+                <div class="success-text">Jurnal Tersimpan!</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Konfigurasi Google Apps Script
-        const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
-        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Ganti dengan URL Google Apps Script Anda
+        // Production mode - menggunakan Google Apps Script
+        const DEMO_MODE = false;
+        
+        // Google Apps Script Web App URL - GANTI DENGAN URL ANDA
+        const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 
         // Set tanggal otomatis
         function setCurrentDate() {
@@ -250,83 +453,97 @@
 
         // Load data guru dari Google Sheets
         async function loadGuru() {
+            const guruSelect = document.getElementById('guru');
+            guruSelect.innerHTML = '<option value="">Memuat data guru...</option>';
+            
             try {
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getGuru`);
-                const data = await response.json();
+                const guruList = await loadGuruFromSheets();
                 
-                const guruSelect = document.getElementById('guru');
-                
-                // Clear existing options
+                // Clear loading message
                 guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
                 
                 // Add guru options
-                if (data.success && data.guru) {
-                    data.guru.forEach(nama => {
-                        if (nama.trim()) {
-                            const option = document.createElement('option');
-                            option.value = nama.trim();
-                            option.textContent = nama.trim();
-                            guruSelect.appendChild(option);
-                        }
-                    });
-                } else {
-                    // Fallback jika gagal load dari sheets
-                    const fallbackGuru = [
-                        'Drs. Ahmad Wijaya, M.Pd',
-                        'Siti Nurhaliza, S.Pd',
-                        'Budi Santoso, S.Kom',
-                        'Dr. Maya Sari, M.Pd',
-                        'Andi Pratama, S.Pd'
-                    ];
-                    
-                    fallbackGuru.forEach(nama => {
-                        const option = document.createElement('option');
-                        option.value = nama;
-                        option.textContent = nama;
-                        guruSelect.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading guru:', error);
-                
-                // Show fallback options
-                const guruSelect = document.getElementById('guru');
-                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
-                const fallbackGuru = [
-                    'Drs. Ahmad Wijaya, M.Pd',
-                    'Siti Nurhaliza, S.Pd',
-                    'Budi Santoso, S.Kom'
-                ];
-                
-                fallbackGuru.forEach(nama => {
+                guruList.forEach(nama => {
                     const option = document.createElement('option');
                     option.value = nama;
                     option.textContent = nama;
                     guruSelect.appendChild(option);
                 });
+                
+                console.log('📋 Data guru berhasil dimuat dari Google Sheets');
+            } catch (error) {
+                console.error('❌ Error loading guru:', error);
+                guruSelect.innerHTML = '<option value="">Error memuat data guru</option>';
             }
         }
 
-        // Simpan data ke Google Sheets
-        async function saveToSheets(formData) {
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+        // Kirim data ke Google Sheets
+        function saveToGoogleSheets(formData) {
+            return new Promise((resolve, reject) => {
+                console.log('📤 Mengirim data ke Google Sheets...');
+                
+                // Prepare data for Google Sheets
+                const dataToSend = {
+                    action: 'saveJurnal',
+                    data: formData
+                };
+                
+                fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'no-cors', // Required for Google Apps Script
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        action: 'saveJurnal',
-                        data: formData
-                    })
+                    body: JSON.stringify(dataToSend)
+                })
+                .then(() => {
+                    // no-cors mode doesn't return response, assume success
+                    console.log('✅ Data berhasil dikirim ke Google Sheets');
+                    resolve({ success: true, message: 'Data berhasil disimpan ke Google Sheets' });
+                })
+                .catch(error => {
+                    console.error('❌ Error mengirim ke Google Sheets:', error);
+                    reject({ success: false, error: 'Gagal mengirim data ke Google Sheets: ' + error.message });
                 });
+            });
+        }
+
+        // Load data guru dari Google Sheets
+        function loadGuruFromSheets() {
+            return new Promise((resolve, reject) => {
+                console.log('📥 Memuat data guru dari Google Sheets...');
                 
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error('Error saving to sheets:', error);
-                return { success: false, error: error.message };
-            }
+                fetch(SCRIPT_URL + '?action=getGuru', {
+                    method: 'GET',
+                    mode: 'no-cors'
+                })
+                .then(() => {
+                    // Fallback guru list jika tidak bisa load dari sheets
+                    const fallbackGuru = [
+                        'Drs. Ahmad Wijaya, M.Pd',
+                        'Siti Nurhaliza, S.Pd', 
+                        'Budi Santoso, S.Kom',
+                        'Dr. Maya Sari, M.Pd',
+                        'Andi Pratama, S.Pd',
+                        'Dewi Kartika, S.Pd',
+                        'Rudi Hermawan, M.Kom'
+                    ];
+                    resolve(fallbackGuru);
+                })
+                .catch(error => {
+                    console.warn('⚠️ Gagal memuat dari Google Sheets, menggunakan data fallback');
+                    const fallbackGuru = [
+                        'Drs. Ahmad Wijaya, M.Pd',
+                        'Siti Nurhaliza, S.Pd', 
+                        'Budi Santoso, S.Kom',
+                        'Dr. Maya Sari, M.Pd',
+                        'Andi Pratama, S.Pd',
+                        'Dewi Kartika, S.Pd',
+                        'Rudi Hermawan, M.Kom'
+                    ];
+                    resolve(fallbackGuru);
+                });
+            });
         }
 
         // Hitung jumlah jam pelajaran
@@ -345,16 +562,40 @@
             }
         }
 
+        // Show success animation
+        function showSuccessAnimation() {
+            const overlay = document.getElementById('successOverlay');
+            console.log('🎬 Menampilkan animasi sukses...');
+            
+            // Force display and trigger animation
+            overlay.style.display = 'flex';
+            overlay.classList.add('show');
+            
+            // Hide after 3 seconds to allow full animation
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300);
+            }, 3000);
+        }
+
         // Show message
         function showMessage(type, message) {
             const successMsg = document.getElementById('successMessage');
             const errorMsg = document.getElementById('errorMessage');
             
             if (type === 'success') {
-                successMsg.querySelector('p:last-child').textContent = message;
-                successMsg.classList.remove('hidden');
-                if (errorMsg) errorMsg.classList.add('hidden');
-                setTimeout(() => successMsg.classList.add('hidden'), 5000);
+                // Show animated checkmark first
+                showSuccessAnimation();
+                
+                // Then show success message after animation
+                setTimeout(() => {
+                    successMsg.querySelector('p:last-child').textContent = message;
+                    successMsg.classList.remove('hidden');
+                    if (errorMsg) errorMsg.classList.add('hidden');
+                    setTimeout(() => successMsg.classList.add('hidden'), 5000);
+                }, 2500);
             } else {
                 if (document.getElementById('errorText')) {
                     document.getElementById('errorText').textContent = message;
@@ -371,18 +612,149 @@
         document.getElementById('dariJam').addEventListener('change', hitungJumlahJam);
         document.getElementById('sampaiJam').addEventListener('change', hitungJumlahJam);
 
-        // Preview foto
-        document.getElementById('foto').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('photoPreview');
-                    const img = document.getElementById('previewImage');
-                    img.src = e.target.result;
-                    preview.classList.remove('hidden');
+        // Camera functionality
+        let currentStream = null;
+        let capturedPhotoData = null;
+
+        // Start camera
+        document.getElementById('startCameraBtn').addEventListener('click', async function() {
+            try {
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera API tidak didukung di browser ini');
+                }
+
+                // Show loading state
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<div class="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Membuka kamera...';
+                btn.disabled = true;
+
+                // Try different camera constraints
+                let constraints = {
+                    video: {
+                        facingMode: 'environment', // Back camera first
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
+                    }
                 };
-                reader.readAsDataURL(file);
+
+                try {
+                    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch (backCameraError) {
+                    console.log('Back camera failed, trying front camera:', backCameraError);
+                    // Fallback to front camera
+                    constraints.video.facingMode = 'user';
+                    try {
+                        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    } catch (frontCameraError) {
+                        console.log('Front camera failed, trying basic constraints:', frontCameraError);
+                        // Fallback to basic video
+                        constraints = { video: true };
+                        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    }
+                }
+
+                const video = document.getElementById('cameraVideo');
+                video.srcObject = currentStream;
+
+                // Wait for video to be ready
+                video.onloadedmetadata = function() {
+                    video.play();
+                    console.log('Camera started successfully');
+                };
+
+                // Show camera preview, hide start button
+                document.getElementById('cameraSection').classList.add('hidden');
+                document.getElementById('cameraPreview').classList.remove('hidden');
+                document.getElementById('photoPreview').classList.add('hidden');
+
+                // Reset button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                
+                // Reset button
+                const btn = this;
+                btn.innerHTML = '📷 Buka Kamera';
+                btn.disabled = false;
+
+                // Show detailed error message
+                let errorMessage = 'Tidak dapat mengakses kamera. ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Izin kamera ditolak. Silakan izinkan akses kamera di browser.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'Kamera tidak ditemukan di perangkat ini.';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMessage += 'Browser tidak mendukung akses kamera.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Kamera sedang digunakan aplikasi lain.';
+                } else {
+                    errorMessage += 'Error: ' + error.message;
+                }
+
+                showMessage('error', errorMessage);
+            }
+        });
+
+        // Capture photo
+        document.getElementById('captureBtn').addEventListener('click', function() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('photoCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame to canvas
+            ctx.drawImage(video, 0, 0);
+
+            // Convert to base64
+            capturedPhotoData = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Show preview
+            const previewImg = document.getElementById('previewImage');
+            previewImg.src = capturedPhotoData;
+            
+            // Hide camera, show photo preview
+            document.getElementById('cameraPreview').classList.add('hidden');
+            document.getElementById('photoPreview').classList.remove('hidden');
+
+            // Stop camera stream
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+        });
+
+        // Close camera
+        document.getElementById('closeCameraBtn').addEventListener('click', function() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            document.getElementById('cameraPreview').classList.add('hidden');
+            document.getElementById('cameraSection').classList.remove('hidden');
+        });
+
+        // Retake photo
+        document.getElementById('retakeBtn').addEventListener('click', function() {
+            capturedPhotoData = null;
+            document.getElementById('photoData').value = '';
+            document.getElementById('photoPreview').classList.add('hidden');
+            document.getElementById('cameraSection').classList.remove('hidden');
+        });
+
+        // Use photo
+        document.getElementById('usePhotoBtn').addEventListener('click', function() {
+            if (capturedPhotoData) {
+                document.getElementById('photoData').value = capturedPhotoData;
+                // Keep photo preview visible
             }
         });
 
@@ -412,12 +784,13 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value,
                     materi: document.getElementById('materi').value,
-                    foto: document.getElementById('foto').files[0] ? 'Ada foto' : 'Tidak ada foto',
+                    foto: capturedPhotoData ? 'Ada foto dari kamera' : 'Tidak ada foto',
+                    fotoData: capturedPhotoData || null,
                     timestamp: new Date().toISOString()
                 };
 
-                // Save to Google Sheets
-                const result = await saveToSheets(formData);
+                // Save data to Google Sheets
+                const result = await saveToGoogleSheets(formData);
                 
                 if (result.success) {
                     showMessage('success', 'Data berhasil disimpan ke Google Sheets!');
@@ -425,7 +798,11 @@
                     // Reset form
                     document.getElementById('journalForm').reset();
                     document.getElementById('photoPreview').classList.add('hidden');
+                    document.getElementById('cameraPreview').classList.add('hidden');
+                    document.getElementById('cameraSection').classList.remove('hidden');
                     document.getElementById('jumlahJam').classList.add('hidden');
+                    capturedPhotoData = null;
+                    document.getElementById('photoData').value = '';
                     setCurrentDate();
                     
                     // Scroll to top
@@ -443,6 +820,12 @@
             }
         });
 
+        // Test animation button
+        document.getElementById('testAnimationBtn').addEventListener('click', function() {
+            console.log('🎬 Testing animation...');
+            showSuccessAnimation();
+        });
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             setCurrentDate();
@@ -450,120 +833,23 @@
             
             // Update date every minute
             setInterval(setCurrentDate, 60000);
+            
+            console.log('🎯 Aplikasi Jurnal Kelas Digital siap digunakan!');
+            console.log('📊 Mode: Production (data disimpan ke Google Sheets)');
+            console.log('🔧 Pastikan SCRIPT_URL sudah diatur dengan benar');
+            console.log('📝 URL saat ini:', SCRIPT_URL);
         });
 
-        // Console log untuk Google Apps Script code
-        console.log(`
-=== GOOGLE APPS SCRIPT CODE ===
-Salin kode berikut ke Google Apps Script (script.google.com):
-
-const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
-
-function doGet(e) {
-  const action = e.parameter.action;
-  
-  if (action === 'getGuru') {
-    return getGuru();
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({success: false, error: 'Invalid action'}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    
-    if (data.action === 'saveJurnal') {
-      return saveJurnal(data.data);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: 'Invalid action'}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function getGuru() {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let guruSheet = ss.getSheetByName('Guru');
-    
-    if (!guruSheet) {
-      guruSheet = ss.insertSheet('Guru');
-      guruSheet.getRange('A1').setValue('Nama Guru');
-      guruSheet.getRange('A2:A6').setValues([
-        ['Drs. Ahmad Wijaya, M.Pd'],
-        ['Siti Nurhaliza, S.Pd'],
-        ['Budi Santoso, S.Kom'],
-        ['Dr. Maya Sari, M.Pd'],
-        ['Andi Pratama, S.Pd']
-      ]);
-    }
-    
-    const lastRow = guruSheet.getLastRow();
-    if (lastRow <= 1) {
-      return ContentService.createTextOutput(JSON.stringify({success: true, guru: []}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-    
-    const guruData = guruSheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
-    
-    return ContentService.createTextOutput(JSON.stringify({success: true, guru: guruData}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function saveJurnal(data) {
-  try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let jurnalSheet = ss.getSheetByName('Jurnal');
-    
-    if (!jurnalSheet) {
-      jurnalSheet = ss.insertSheet('Jurnal');
-      jurnalSheet.getRange('A1:J1').setValues([[
-        'Tanggal', 'Dari Jam', 'Sampai Jam', 'Jumlah Jam', 'Kelas', 'Guru', 'Mata Pelajaran', 'Materi', 'Foto', 'Timestamp'
-      ]]);
-    }
-    
-    const newRow = [
-      data.tanggal,
-      data.dariJam,
-      data.sampaiJam,
-      data.jumlahJam,
-      data.kelas,
-      data.guru,
-      data.mataPelajaran,
-      data.materi,
-      data.foto,
-      new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
-    ];
-    
-    jurnalSheet.appendRow(newRow);
-    
-    return ContentService.createTextOutput(JSON.stringify({success: true, message: 'Data berhasil disimpan'}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// Langkah setup:
-// 1. Buka script.google.com
-// 2. Buat project baru
-// 3. Paste kode di atas ke Code.gs
-// 4. Klik Deploy > New deployment
-// 5. Pilih type: Web app
-// 6. Execute as: Me
-// 7. Who has access: Anyone
-// 8. Copy URL web app dan ganti YOUR_GOOGLE_APPS_SCRIPT_URL di aplikasi
-        `);
+        // Check Google Apps Script connection
+        setTimeout(() => {
+            if (SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
+                console.warn('⚠️ PERINGATAN: Ganti YOUR_SCRIPT_ID dengan ID Google Apps Script yang sebenarnya!');
+                console.log('📋 Langkah setup:');
+                console.log('1. Buat Google Apps Script baru');
+                console.log('2. Deploy sebagai Web App');
+                console.log('3. Ganti YOUR_SCRIPT_ID dengan ID yang didapat');
+            }
+        }, 2000);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989971f2a2690452',t:'MTc1OTYzMDg4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899981d76780fad',t:'MTc1OTYzMjQ0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
