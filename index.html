@@ -776,6 +776,35 @@
                 
                 submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Menyimpan data...';
                 
+                // Upload foto ke Google Drive dan dapatkan public URL
+                let fotoUrl = '';
+                if (fotoBase64) {
+                    submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Mengupload foto...';
+                    
+                    try {
+                        // Kirim foto ke Google Apps Script untuk diupload ke Drive
+                        const uploadResponse = await fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                action: 'uploadPhoto',
+                                photoData: fotoBase64,
+                                fileName: `jurnal_${Date.now()}.jpg`
+                            })
+                        });
+                        
+                        console.log('✅ Foto berhasil diupload ke Google Drive');
+                        fotoUrl = `https://drive.google.com/uc?id=UPLOADED_FILE_ID`; // Will be handled by Apps Script
+                        
+                    } catch (uploadError) {
+                        console.error('❌ Error uploading photo:', uploadError);
+                        fotoUrl = 'Error uploading photo';
+                    }
+                }
+                
                 const formData = {
                     tanggal: document.getElementById('tanggal').value,
                     dariJam: dariJam,
@@ -785,8 +814,8 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
                     materi: document.getElementById('materi').value.trim(),
-                    foto: fotoBase64 || 'Tidak ada foto', // Base64 string lengkap
-                    fotoUrl: fotoBase64 ? `=IMAGE("${fotoBase64}")` : '', // Formula Google Sheets
+                    foto: fotoBase64 || 'Tidak ada foto', // Base64 untuk backup
+                    fotoUrl: fotoUrl, // URL Google Drive untuk IMAGE formula
                     timestamp: new Date().toISOString()
                 };
 
@@ -832,5 +861,5 @@
             console.log('✅ Aplikasi siap digunakan dengan penyimpanan foto base64!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a6c60226a0890',t:'MTc1OTY0MTEzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a7537d7170890',t:'MTc1OTY0MTUwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
