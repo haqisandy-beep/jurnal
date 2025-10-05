@@ -785,8 +785,8 @@
                     guru: document.getElementById('guru').value,
                     mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
                     materi: document.getElementById('materi').value.trim(),
-                    foto: fotoBase64 || 'Tidak ada foto', // Langsung simpan base64 di kolom foto
-                    fotoBase64: fotoBase64, // Backup untuk kompatibilitas
+                    foto: fotoBase64 || 'Tidak ada foto', // Base64 string lengkap
+                    fotoUrl: fotoBase64 ? `=IMAGE("${fotoBase64}")` : '', // Formula Google Sheets
                     timestamp: new Date().toISOString()
                 };
 
@@ -832,5 +832,5 @@
             console.log('✅ Aplikasi siap digunakan dengan penyimpanan foto base64!');
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a6229c5aeaa09',t:'MTc1OTY0MDcyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989a6c60226a0890',t:'MTc1OTY0MTEzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
