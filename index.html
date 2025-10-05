@@ -832,9 +832,108 @@
             }
         });
 
+        // Validasi form
+        function validateForm() {
+            const errors = [];
+            
+            // Validasi jam pelajaran
+            const dariJam = document.getElementById('dariJam').value;
+            const sampaiJam = document.getElementById('sampaiJam').value;
+            
+            if (!dariJam) {
+                errors.push('Dari Jam harus dipilih');
+                highlightError('dariJam');
+            }
+            
+            if (!sampaiJam) {
+                errors.push('Sampai Jam harus dipilih');
+                highlightError('sampaiJam');
+            }
+            
+            if (dariJam && sampaiJam && parseInt(sampaiJam) < parseInt(dariJam)) {
+                errors.push('Sampai Jam tidak boleh lebih kecil dari Dari Jam');
+                highlightError('sampaiJam');
+            }
+            
+            // Validasi kelas
+            const kelas = document.getElementById('kelas').value;
+            if (!kelas) {
+                errors.push('Kelas harus dipilih');
+                highlightError('kelas');
+            }
+            
+            // Validasi guru
+            const guru = document.getElementById('guru').value;
+            if (!guru || guru === 'Memuat data guru...') {
+                errors.push('Guru harus dipilih');
+                highlightError('guru');
+            }
+            
+            // Validasi mata pelajaran
+            const mataPelajaran = document.getElementById('mataPelajaran').value.trim();
+            if (!mataPelajaran) {
+                errors.push('Mata Pelajaran harus diisi');
+                highlightError('mataPelajaran');
+            }
+            
+            // Validasi materi
+            const materi = document.getElementById('materi').value.trim();
+            if (!materi) {
+                errors.push('Materi Pembelajaran harus diisi');
+                highlightError('materi');
+            }
+            
+            return errors;
+        }
+        
+        // Highlight field yang error
+        function highlightError(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.classList.add('border-red-500', 'bg-red-50');
+            field.classList.remove('border-gray-200');
+            
+            // Remove highlight setelah user mulai mengetik/memilih
+            const removeHighlight = () => {
+                field.classList.remove('border-red-500', 'bg-red-50');
+                field.classList.add('border-gray-200');
+                field.removeEventListener('input', removeHighlight);
+                field.removeEventListener('change', removeHighlight);
+            };
+            
+            field.addEventListener('input', removeHighlight);
+            field.addEventListener('change', removeHighlight);
+        }
+        
+        // Scroll ke field pertama yang error
+        function scrollToFirstError() {
+            const errorField = document.querySelector('.border-red-500');
+            if (errorField) {
+                errorField.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                errorField.focus();
+            }
+        }
+
         // Handle form submission
         document.getElementById('journalForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Validasi form terlebih dahulu
+            const errors = validateForm();
+            
+            if (errors.length > 0) {
+                // Tampilkan error pertama
+                showMessage('error', `❌ ${errors[0]}`);
+                
+                // Scroll ke field yang error
+                scrollToFirstError();
+                
+                // Tampilkan semua error di console untuk debugging
+                console.log('❌ Validation errors:', errors);
+                return;
+            }
             
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
@@ -854,18 +953,21 @@
                     jumlahJam: jumlahJam,
                     kelas: document.getElementById('kelas').value,
                     guru: document.getElementById('guru').value,
-                    mataPelajaran: document.getElementById('mataPelajaran').value,
-                    materi: document.getElementById('materi').value,
+                    mataPelajaran: document.getElementById('mataPelajaran').value.trim(),
+                    materi: document.getElementById('materi').value.trim(),
                     foto: capturedPhotoData ? 'Ada foto dari kamera' : 'Tidak ada foto',
                     fotoData: capturedPhotoData || null,
                     timestamp: new Date().toISOString()
                 };
+
+                console.log('📝 Data yang akan disimpan:', formData);
 
                 const result = await saveToGoogleSheets(formData);
                 
                 if (result.success) {
                     showMessage('success', 'Data berhasil disimpan ke Google Sheets!');
                     
+                    // Reset form
                     document.getElementById('journalForm').reset();
                     document.getElementById('photoPreview').classList.add('hidden');
                     document.getElementById('cameraPreview').classList.add('hidden');
@@ -874,6 +976,12 @@
                     capturedPhotoData = null;
                     document.getElementById('photoData').value = '';
                     setCurrentDate();
+                    
+                    // Remove any error highlights
+                    document.querySelectorAll('.border-red-500').forEach(field => {
+                        field.classList.remove('border-red-500', 'bg-red-50');
+                        field.classList.add('border-gray-200');
+                    });
                     
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
@@ -899,5 +1007,5 @@
             console.log('🔗 URL:', SCRIPT_URL);
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899c4f8859db5e7',t:'MTc1OTYzNDI4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9899c9a6d55eaa09',t:'MTc1OTYzNDQ3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
