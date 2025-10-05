@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurnal Kelas Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #fbbf24 0%, #3b82f6 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-focus:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 500px; }
+        }
+        
+        .slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .gradient-bg {
+                padding: 1rem;
+            }
+            
+            .card-shadow {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 fade-in">
+            <h1 class="text-4xl font-bold text-white mb-2">📚 Jurnal Kelas Digital</h1>
+            <p class="text-blue-100 text-lg">Sistem pencatatan kegiatan pembelajaran</p>
+        </div>
+
+        <!-- Main Form -->
+        <div class="bg-white rounded-2xl card-shadow p-8 fade-in">
+            <form id="journalForm" class="space-y-6">
+                <!-- Row 1: Jam dan Tanggal -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">⏰ Jam Pelajaran</label>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Dari Jam</label>
+                                <select id="dariJam" required class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
+                                    <option value="">Pilih</option>
+                                    <option value="1">Jam 1</option>
+                                    <option value="2">Jam 2</option>
+                                    <option value="3">Jam 3</option>
+                                    <option value="4">Jam 4</option>
+                                    <option value="5">Jam 5</option>
+                                    <option value="6">Jam 6</option>
+                                    <option value="7">Jam 7</option>
+                                    <option value="8">Jam 8</option>
+                                    <option value="9">Jam 9</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Sampai Jam</label>
+                                <select id="sampaiJam" required class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
+                                    <option value="">Pilih</option>
+                                    <option value="1">Jam 1</option>
+                                    <option value="2">Jam 2</option>
+                                    <option value="3">Jam 3</option>
+                                    <option value="4">Jam 4</option>
+                                    <option value="5">Jam 5</option>
+                                    <option value="6">Jam 6</option>
+                                    <option value="7">Jam 7</option>
+                                    <option value="8">Jam 8</option>
+                                    <option value="9">Jam 9</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="jumlahJam" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                            <span class="text-blue-700 font-semibold text-sm">📊 Jumlah Jam: <span id="totalJam">0</span> JP</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">📅 Tanggal</label>
+                        <input type="text" id="tanggal" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <!-- Row 2: Kelas dan Guru -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">🏫 Kelas</label>
+                        <select id="kelas" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
+                            <option value="">Pilih Kelas</option>
+                            <option value="X DKV">X DKV</option>
+                            <option value="X TAB A">X TAB A</option>
+                            <option value="X TAB B">X TAB B</option>
+                            <option value="XI DKV">XI DKV</option>
+                            <option value="XI TAB A">XI TAB A</option>
+                            <option value="XI TAB B">XI TAB B</option>
+                            <option value="XII DKV">XII DKV</option>
+                            <option value="XII TAB A">XII TAB A</option>
+                            <option value="XII TAB B">XII TAB B</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">👨‍🏫 Guru</label>
+                        <select id="guru" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
+                            <option value="">Pilih Guru</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Mata Pelajaran -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📖 Mata Pelajaran</label>
+                    <input type="text" id="mataPelajaran" required placeholder="Masukkan mata pelajaran" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300">
+                </div>
+
+                <!-- Materi -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📝 Materi Pembelajaran</label>
+                    <textarea id="materi" required rows="4" placeholder="Jelaskan materi yang diajarkan hari ini..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none input-focus transition-all duration-300 resize-none"></textarea>
+                </div>
+
+                <!-- Foto -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">📸 Foto Kegiatan</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors duration-300">
+                        <input type="file" id="foto" accept="image/*" capture="camera" class="hidden">
+                        <button type="button" onclick="document.getElementById('foto').click()" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold py-3 px-6 rounded-xl btn-hover transition-all duration-300">
+                            📷 Ambil Foto
+                        </button>
+                        <p class="text-gray-500 text-sm mt-2">Klik untuk mengambil foto langsung</p>
+                        <div id="photoPreview" class="mt-4 hidden">
+                            <img id="previewImage" class="photo-preview mx-auto border-4 border-white shadow-lg">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center pt-4">
+                    <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl btn-hover transition-all duration-300 text-lg">
+                        💾 Simpan Jurnal
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden mt-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-xl fade-in">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">✅</span>
+                <div>
+                    <p class="font-semibold">Jurnal berhasil disimpan!</p>
+                    <p class="text-sm">Data telah tersimpan ke Google Sheets.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden mt-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-xl fade-in">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">❌</span>
+                <div>
+                    <p class="font-semibold">Terjadi kesalahan!</p>
+                    <p class="text-sm" id="errorText">Silakan coba lagi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi Google Apps Script
+        const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // Ganti dengan URL Google Apps Script Anda
+
+        // Set tanggal otomatis
+        function setCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                timeZone: 'Asia/Jakarta'
+            };
+            const dateString = now.toLocaleDateString('id-ID', options);
+            document.getElementById('tanggal').value = dateString;
+        }
+
+        // Load data guru dari Google Sheets
+        async function loadGuru() {
+            try {
+                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getGuru`);
+                const data = await response.json();
+                
+                const guruSelect = document.getElementById('guru');
+                
+                // Clear existing options
+                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+                
+                // Add guru options
+                if (data.success && data.guru) {
+                    data.guru.forEach(nama => {
+                        if (nama.trim()) {
+                            const option = document.createElement('option');
+                            option.value = nama.trim();
+                            option.textContent = nama.trim();
+                            guruSelect.appendChild(option);
+                        }
+                    });
+                } else {
+                    // Fallback jika gagal load dari sheets
+                    const fallbackGuru = [
+                        'Drs. Ahmad Wijaya, M.Pd',
+                        'Siti Nurhaliza, S.Pd',
+                        'Budi Santoso, S.Kom',
+                        'Dr. Maya Sari, M.Pd',
+                        'Andi Pratama, S.Pd'
+                    ];
+                    
+                    fallbackGuru.forEach(nama => {
+                        const option = document.createElement('option');
+                        option.value = nama;
+                        option.textContent = nama;
+                        guruSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading guru:', error);
+                
+                // Show fallback options
+                const guruSelect = document.getElementById('guru');
+                guruSelect.innerHTML = '<option value="">Pilih Guru</option>';
+                const fallbackGuru = [
+                    'Drs. Ahmad Wijaya, M.Pd',
+                    'Siti Nurhaliza, S.Pd',
+                    'Budi Santoso, S.Kom'
+                ];
+                
+                fallbackGuru.forEach(nama => {
+                    const option = document.createElement('option');
+                    option.value = nama;
+                    option.textContent = nama;
+                    guruSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Simpan data ke Google Sheets
+        async function saveToSheets(formData) {
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'saveJurnal',
+                        data: formData
+                    })
+                });
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error saving to sheets:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Hitung jumlah jam pelajaran
+        function hitungJumlahJam() {
+            const dariJam = parseInt(document.getElementById('dariJam').value);
+            const sampaiJam = parseInt(document.getElementById('sampaiJam').value);
+            const jumlahJamDiv = document.getElementById('jumlahJam');
+            const totalJamSpan = document.getElementById('totalJam');
+            
+            if (dariJam && sampaiJam && sampaiJam >= dariJam) {
+                const totalJam = sampaiJam - dariJam + 1;
+                totalJamSpan.textContent = totalJam;
+                jumlahJamDiv.classList.remove('hidden');
+            } else {
+                jumlahJamDiv.classList.add('hidden');
+            }
+        }
+
+        // Show message
+        function showMessage(type, message) {
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (type === 'success') {
+                successMsg.querySelector('p:last-child').textContent = message;
+                successMsg.classList.remove('hidden');
+                if (errorMsg) errorMsg.classList.add('hidden');
+                setTimeout(() => successMsg.classList.add('hidden'), 5000);
+            } else {
+                if (document.getElementById('errorText')) {
+                    document.getElementById('errorText').textContent = message;
+                }
+                if (errorMsg) errorMsg.classList.remove('hidden');
+                successMsg.classList.add('hidden');
+                setTimeout(() => {
+                    if (errorMsg) errorMsg.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // Event listeners untuk dropdown jam
+        document.getElementById('dariJam').addEventListener('change', hitungJumlahJam);
+        document.getElementById('sampaiJam').addEventListener('change', hitungJumlahJam);
+
+        // Preview foto
+        document.getElementById('foto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    const img = document.getElementById('previewImage');
+                    img.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('journalForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading
+            submitBtn.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>Menyimpan...';
+            submitBtn.disabled = true;
+            
+            try {
+                // Collect form data
+                const dariJam = document.getElementById('dariJam').value;
+                const sampaiJam = document.getElementById('sampaiJam').value;
+                const jumlahJam = sampaiJam - dariJam + 1;
+                
+                const formData = {
+                    tanggal: document.getElementById('tanggal').value,
+                    dariJam: dariJam,
+                    sampaiJam: sampaiJam,
+                    jumlahJam: jumlahJam,
+                    kelas: document.getElementById('kelas').value,
+                    guru: document.getElementById('guru').value,
+                    mataPelajaran: document.getElementById('mataPelajaran').value,
+                    materi: document.getElementById('materi').value,
+                    foto: document.getElementById('foto').files[0] ? 'Ada foto' : 'Tidak ada foto',
+                    timestamp: new Date().toISOString()
+                };
+
+                // Save to Google Sheets
+                const result = await saveToSheets(formData);
+                
+                if (result.success) {
+                    showMessage('success', 'Data berhasil disimpan ke Google Sheets!');
+                    
+                    // Reset form
+                    document.getElementById('journalForm').reset();
+                    document.getElementById('photoPreview').classList.add('hidden');
+                    document.getElementById('jumlahJam').classList.add('hidden');
+                    setCurrentDate();
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    showMessage('error', result.error || 'Gagal menyimpan data. Silakan coba lagi.');
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                showMessage('error', 'Terjadi kesalahan. Silakan coba lagi.');
+            } finally {
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setCurrentDate();
+            loadGuru();
+            
+            // Update date every minute
+            setInterval(setCurrentDate, 60000);
+        });
+
+        // Console log untuk Google Apps Script code
+        console.log(`
+=== GOOGLE APPS SCRIPT CODE ===
+Salin kode berikut ke Google Apps Script (script.google.com):
+
+const SPREADSHEET_ID = '1bt97CIR3iCMR6AHTCCW_sa-Le5HMgqk30-JNiv8Gofg';
+
+function doGet(e) {
+  const action = e.parameter.action;
+  
+  if (action === 'getGuru') {
+    return getGuru();
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({success: false, error: 'Invalid action'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    
+    if (data.action === 'saveJurnal') {
+      return saveJurnal(data.data);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({success: false, error: 'Invalid action'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getGuru() {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let guruSheet = ss.getSheetByName('Guru');
+    
+    if (!guruSheet) {
+      guruSheet = ss.insertSheet('Guru');
+      guruSheet.getRange('A1').setValue('Nama Guru');
+      guruSheet.getRange('A2:A6').setValues([
+        ['Drs. Ahmad Wijaya, M.Pd'],
+        ['Siti Nurhaliza, S.Pd'],
+        ['Budi Santoso, S.Kom'],
+        ['Dr. Maya Sari, M.Pd'],
+        ['Andi Pratama, S.Pd']
+      ]);
+    }
+    
+    const lastRow = guruSheet.getLastRow();
+    if (lastRow <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({success: true, guru: []}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    const guruData = guruSheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
+    
+    return ContentService.createTextOutput(JSON.stringify({success: true, guru: guruData}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function saveJurnal(data) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    let jurnalSheet = ss.getSheetByName('Jurnal');
+    
+    if (!jurnalSheet) {
+      jurnalSheet = ss.insertSheet('Jurnal');
+      jurnalSheet.getRange('A1:J1').setValues([[
+        'Tanggal', 'Dari Jam', 'Sampai Jam', 'Jumlah Jam', 'Kelas', 'Guru', 'Mata Pelajaran', 'Materi', 'Foto', 'Timestamp'
+      ]]);
+    }
+    
+    const newRow = [
+      data.tanggal,
+      data.dariJam,
+      data.sampaiJam,
+      data.jumlahJam,
+      data.kelas,
+      data.guru,
+      data.mataPelajaran,
+      data.materi,
+      data.foto,
+      new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'})
+    ];
+    
+    jurnalSheet.appendRow(newRow);
+    
+    return ContentService.createTextOutput(JSON.stringify({success: true, message: 'Data berhasil disimpan'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({success: false, error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Langkah setup:
+// 1. Buka script.google.com
+// 2. Buat project baru
+// 3. Paste kode di atas ke Code.gs
+// 4. Klik Deploy > New deployment
+// 5. Pilih type: Web app
+// 6. Execute as: Me
+// 7. Who has access: Anyone
+// 8. Copy URL web app dan ganti YOUR_GOOGLE_APPS_SCRIPT_URL di aplikasi
+        `);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'989971f2a2690452',t:'MTc1OTYzMDg4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
